@@ -52,6 +52,23 @@ legend(4,139, c("White", "Black", "Hispanic", "Asian", "Native American", "Unkno
 legend(0.1,139, c("Total Killed"), col = c("black"), lty = c(1), lwd = c(3), box.lty=0)
 grid(0,NULL)
 
+# plot the counts for each month normalized by the population percentage
+plot(month_fac,month_cnts[month.name]/308745538, xlab = "", xaxt = "n", ylab = "Percentage of People Killed", ylim = c(0,2e-6))
+lines(month_fac,black_cnts[month.name]/38929319, col = "black", pch = 19, type = "o")
+lines(month_fac,white_cnts[month.name]/196817552, col = "bisque2", pch = 19, type = "o")
+lines(month_fac,hisp_cnts[month.name]/50477594, col = "chocolate", pch = 19, type = "o")
+lines(month_fac,asian_cnts[month.name]/14465124, col = "darkgoldenrod1", pch = 19, type = "o")
+lines(month_fac,nat_cnts[month.name]/(2247098+481576), col = "coral4", pch = 19, type = "o")
+lines(month_fac,un_cnts[month.name]/(604265+5966481), col = "azure4", pch = 19, type = "o")
+minor.tick(ny=2, tick.ratio=0.5)
+axis(1, at=1:12, labels=month.abb) # Change x labels to month abbreviations
+title(main="People Killed by Police in 2015 - Normalized for Demographic Polulation")
+legend(4,2.05e-6, c("White", "Black", "Hispanic", "Asian", "Native American", "Unknown"), 
+       col = c("bisque2", "black", "chocolate", "darkgoldenrod1", "coral4", "azure4"), lty = c(1,1,1,1,1,1), 
+       pch = c(19, 19, 19, 19, 19, 19), ncol = 3, box.lty=0)
+legend(0.1,2.05e-6, c("Total Killed"), col = c("black"), lty = c(1), lwd = c(3), box.lty=0)
+grid(0,NULL)
+
 # compute the cumulative killings over time
 #cum_2015 = cumsum(month_cnts[month.name])
 
@@ -72,3 +89,4 @@ grid(0,NULL)
 #         http://www.sthda.com/english/wiki/add-legends-to-plots-in-r-software-the-easiest-way
 # Adding gridlines: https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/grid.html
 # Adding minor ticks: http://math.furman.edu/~dcs/courses/math47/R/library/Hmisc/html/minor.tick.html
+# Population percentages: https://en.wikipedia.org/wiki/Demography_of_the_United_States#Race_and_ethnicity
