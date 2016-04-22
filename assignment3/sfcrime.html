@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+text {
+  font: bold 48px monospace;
+}
+
+.enter {
+  fill: green;
+}
+
+.update {
+  fill: #333;
+}
+
+.chart div {
+  font: 10px sans-serif;
+  background-color: grey;
+  text-align: right;
+  padding: 3px;
+  margin: 1px;
+  color: white;
+}
+
+</style>
+<body>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+//.............. SF MAP ............//
+// Set up size
+var width = 750,
+	height = width;
+
+// Set up projection that map is using
+var projection = d3.geo.mercator()
+	.center([-122.433701, 37.767683]) // San Francisco, roughly
+	.scale(225000)
+	.translate([width / 2, height / 2]);
+
+// Add an svg element to the DOM
+var svg = d3.select("body").append("svg")
+	.attr("width", width)
+	.attr("height", height);
+
+// Add svg map at correct size, assumes map is saved in a subdirectory called "data"
+svg.append("image")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("xlink:href", "data/sf-map.svg");
+//..................................//
+
+var data = [[-122.458220811697, 37.7633123961354]]; //sample data
+console.log(data[1] + ", " + data[0]);
+console.log(projection(data));
+// put points down where the crimes happened using the data locations
+// add circles to svg
+svg.selectAll("circle")
+    .data(data).enter()
+		.append("circle")
+		.attr("cx", function (d) { console.log(projection(d)); return projection(d)[1]; })
+		.attr("cy", function (d) { return projection(d)[0]; })
+		.attr("r", "8px")
+		.attr("fill", "red");
+
+
+</script>
+</body>

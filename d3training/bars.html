@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+text {
+  font: bold 48px monospace;
+}
+
+.enter {
+  fill: green;
+}
+
+.update {
+  fill: #333;
+}
+
+.chart div {
+  font: 10px sans-serif;
+  background-color: grey;
+  text-align: right;
+  padding: 3px;
+  margin: 1px;
+  color: white;
+}
+
+</style>
+<body>
+  <h1>A Simple Bar Chart in D3<h1>
+  <section></section>
+  <section></section>
+  <div class="chart"></div>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+var data = [4, 8, 15, 16, 23, 42];
+
+var section = d3.selectAll("section");
+var div = section.append("div");
+div.html("Hello, World!");
+
+//change the body colors
+d3.select("body")
+  .style("color", "black")
+  .style("background-color", "white");
+
+// d3.selectAll("section")
+//     .attr("class", "special")
+//   .append("div")
+//     .html("Hello, new world!");
+
+section.append("div")
+  .html("First!");
+
+section.append("div")
+  .html("Second!");
+
+//coding a bar chart
+d3.select(".chart")
+  .selectAll("div")
+    .data(data)
+  .enter().append("div")
+    .style("width", function(d){ return d*10 + "px";})
+    .text(function(d) {return d;});
+
+
+</script>
+</body>
