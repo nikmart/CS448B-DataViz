@@ -91,7 +91,7 @@ function mapIt(data) {
       })
 	    .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
 	    .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
-      .style("opacity", 0.2);
+      .style("opacity", 0.3);
 
 };
 
@@ -133,7 +133,15 @@ var pickColor = function (d) {
 
 function clickButton(){
   console.log("Button clicked!");
-
+  svg.selectAll("circle")
+    .attr("r", function (d){
+      if (d.Category === "ASSAULT") {
+        return "4px";
+      }
+      else {
+        return "2px";
+      };
+    });
 
 };
 
