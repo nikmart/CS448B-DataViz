@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> /* set the CSS */
+
+body { font: 16px Arial;}
+
+path {
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+div.tooltip {
+    position: absolute;
+    text-align: left;
+    width: 300px;
+    height: 150px;
+    padding: 2px;
+    font: 16px Arial;
+    background: none;
+    border: 0px;
+    border-radius: 2px;
+}
+
+fieldset.field_set{
+ border-color:#FFF;
+ border-style: solid;
+}
+
+</style>
+
+<body>
+
+<fieldset class="field_set">
+    <legend>Filter SHOULDs</legend>
+
+<form name="myform" onSubmit="return handleClickSearch()">
+        <input name="Submit"  type="submit" size="50" style="font-size: 14px;" color="#fff"    value="Find recommendations for ..." >
+        <input type="text" id="myVal" size="80" style="font-size: 14px;" placeholder="Search for a Merkel, Ukraine, or ISIS ... to find out what SHOULD be done.">
+</form>
+
+<form name="myform" onSubmit="return handleClickLength()">
+        <input name="SubmitLen"  type="submit" size="50" style="font-size: 14px;" color="#fff" value="Limit to max sentence length" >
+        <input type="number" id="myLen" style="font-size: 14px;" value="1000" min="1" max="1000">
+</form>
+</fieldset>
+
+
+<!-- load the d3.js library -->
+<script type=
+    "text/javascript" src="http://d3js.org/d3.v3.min.js">
+</script>
+
+<script>
+
+// Set the dimensions of the canvas / graph
+var margin = {top: 30, right: 20, bottom: 30, left: 60},
+    width = 800 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+// Parse the date / time
+var parseDate = d3.time.format("%Y-%m-%d").parse;
+var formatTime = d3.time.format("%d %B %Y");// Format tooltip date / time
+
+var currentSearchTerm = "";
+
+// Set the rangestrann
+var x = d3.time.scale().range([0, width]);
+var y = d3.scale.linear().range([height, 0]);
+
+var flags = ["LEADERS","LETTERS,BRIEFINGS,ETC...","INTERNATIONAL","ASIA (incl. CHINA)","AMERICAS", "EUROPE (incl. BRITAIN)","BUSINESS"]
+var flagsCat = ["LEADERS","LETTERS", "BRIEFINGS", "OBITUARY","INTERNATIONAL","ASIA","CHINA","AMERICAS", "EUROPE", "BRITAIN","BUSINESS"]
+var cols = ["#b2182b","#969696","#969696","#969696","#252525","#08519c","#08519c","#fec503","#5aae61","#5aae61","#de77ae"]
+
+var color = d3.scale.ordinal().domain(flagsCat).range(cols);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+    .orient("bottom").ticks(5);
+
+var yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(5);
+
+
+// Define 'div' for tooltips
+var div = d3.select("body")
+    .append("div")  // declare the tooltip div
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+// Adds the svg canvas
+var svg = d3.select("body")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+
+// Legend
+var legend = d3.select("body").append("svg")
+                    .attr("width",200)
+                    .attr("height",200)
+                    .append("g")
+                        .attr("transform","translate(10,14)");
+
+legend.append("circle").attr("cx", 10).attr("cy", 10).style("fill", cols[0]).attr("r", 20).style("opacity", .7);
+    legend.append("text").attr("x", 40).attr("y",8).style("font-size","15px").text("Click to read what");
+   	legend.append("text").attr("x", 40).attr("y",26).style("font-size","15px").text("SHOULD be done.");
+
+legend.append("circle").attr("cx", 10).attr("cy", 55).style("fill", cols[10]).attr("r", 5);
+    legend.append("text").attr("x", 25).attr("y",60).style("font-size","12px").text(flags[6]);
+
+legend.append("circle").attr("cx", 10).attr("cy", 70).style("fill", cols[8]).attr("r", 5);
+    legend.append("text").attr("x", 25).attr("y",75).style("font-size","12px").text(flags[5]);
+
+legend.append("circle").attr("cx", 10).attr("cy", 85).style("fill", cols[7]).attr("r", 5);
+    legend.append("text").attr("x", 25).attr("y",90).style("font-size","12px").text(flags[4]);
+
+legend.append("circle").attr("cx", 10).attr("cy", 100).style("fill", cols[5]).attr("r", 5);
+    legend.append("text").attr("x", 25).attr("y",105).style("font-size","12px").text(flags[3]);
+
+legend.append("circle").attr("cx", 10).attr("cy", 115).style("fill", cols[4]).attr("r", 5);
+    legend.append("text").attr("x", 25).attr("y",120).style("font-size","12px").text(flags[2]);
+
+legend.append("circle").attr("cx", 10).attr("cy", 130).style("fill", cols[1]).attr("r", 5);
+    legend.append("text").attr("x", 25).attr("y",135).style("font-size","12px").text(flags[1]);
+
+legend.append("circle").attr("cx", 10).attr("cy", 145).style("fill", cols[0]).attr("r", 5);
+    legend.append("text").attr("x", 25).attr("y",150).style("font-size","12px").text(flags[0]);
+
+
+var currentSearchTerm = "";
+var currentLen = 1000;
+// Get the data
+d3.tsv("EcoSHOULDS.tab", function(error, data) {
+
+    data.forEach(function(d) {
+        d.date = parseDate(d.date);
+    });
+
+    // Scale the range of the data
+    x.domain(d3.extent(data, function(d) { return d.date; }));
+    y.domain([0,50]);
+
+
+    // draw the scatterplot
+    svg.selectAll("circle.dot")
+        .data(data)
+        .enter()
+        //.append("a")
+        //    .attr("xlink:href", function(d) { return d.link; })
+        .append("circle")
+          .attr("class", "dot")
+            .attr("r", 5)
+            .attr("cx", function(d) { return x(d.date); })
+            .attr("cy", function(d) { return y(d.counter); })
+            .attr("fill", function(d){ return color(d.flag); })
+
+    // MOUSEOVER EVENTS - Tooltip stuff after this etc
+        .on("mouseover", function(d) {
+        d3.select(this).transition().duration(50).attr("r", 20).style("opacity", .7);
+            div.transition()
+                .duration(500)
+                .style("fill", 0);
+            div.transition()
+                .duration(200)
+                .style("opacity", 1);
+            })
+
+
+        .on("mousedown", function(d) {
+        d3.select(this).transition().duration(50).attr("r", 20).style("opacity", .7);
+            div.transition()
+                .duration(500)
+                .style("fill", 0);
+            div.transition()
+                .duration(200)
+                .style("opacity", 1);
+            div .html(
+                d.who + "<br/><b><big>#SHOULD</big></b><br/>" +
+                d.what + "..." + "<br/><br/><small>" +
+                formatTime(d.date) + "  [ Section: " +
+                d.flag + " ]</small><br/>"  +
+                "<a href=" + d.link + " target='_blank'>Read original article.</a>  |  " +
+                "<a href=https://twitter.com/intent/tweet?text=A+recommendation+from+The+Economist:+...&url=http://bit.ly/1Boramt target='_blank'>Share it.</a>")
+                .style("left", 810 + "px")
+                .style("top", 100 + "px");
+            })
+
+        .on("mouseout", function(){
+                d3.select(this).transition().duration(100).attr("r", 5).style("opacity", valOpacity);
+            });
+
+    // Add the X Axis
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    // Add the Y Axis
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(-30," + 0 + ")")
+        .call(yAxis);
+
+});
+
+// Search
+function handleClickSearch(event){
+  currentSearchTerm = document.getElementById("myVal").value;
+    console.log(currentSearchTerm);
+    draw(currentSearchTerm);
+return false;
+}
+
+function draw(){
+    d3.select("body").selectAll("circle.dot").style("opacity", valOpacity);
+}
+
+var valOpacity = function(d) {
+      if (((d.who + "#SHOULD" + d.what).length <= currentLen) && ((d.what.search(currentSearchTerm) != -1) || (d.who.search(currentSearchTerm) != -1))) {
+        return 1;
+      }
+      else {
+        return 0.25;
+      }
+    };
+
+
+
+// Length
+function handleClickLength(event){
+  currentLen = document.getElementById("myLen").value;
+    console.log(currentLen);
+    draw(currentLen);
+return false;
+}
+
+function draw(){
+    d3.select("body").selectAll("circle.dot").style("opacity", valLen);
+}
+
+var valLen = function(d) {
+	  if (((d.who + "#SHOULD" + d.what).length <= currentLen) && ((d.what.search(currentSearchTerm) != -1) || (d.who.search(currentSearchTerm) != -1))) {
+        return 1;
+      }
+      else {
+        return 0.25;
+      }
+    };
+
+
+</script>
+
+</body>

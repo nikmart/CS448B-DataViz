@@ -25,7 +25,8 @@ text {
 
 </style>
 <body>
-
+<input type="range" min="1" id="dataSlider">
+<input type="button" id="button" value="Button" onClick="clickButton()">
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
@@ -52,9 +53,16 @@ svg.append("image")
           .attr("xlink:href", "data/sf-map.svg");
 //..................................//
 
+var tooltip = d3.select("body")
+	.append("div")
+	.style("position", "absolute")
+	.style("z-index", "10")
+	.style("visibility", "hidden");
+
 // var data = [[-122.458220811697, 37.7633123961354], [-122.447596140416, 37.7106886165247]]; //sample data
 // console.log(data[1] + ", " + data[0]);
 
+// loading the json data [2]
 var crimes;
 
 d3.json("data/scpd_incidents.json", function(error, json) {
@@ -65,7 +73,7 @@ d3.json("data/scpd_incidents.json", function(error, json) {
 });
 
 function mapIt(data) {
-  // put points down where the crimes happened using the data locations
+  // put points down where the crimes happened using the data locations [1]
   // add circles to svg
   //console.log(data.data);
   svg.selectAll("circle")
@@ -74,12 +82,69 @@ function mapIt(data) {
   		.attr("cx", function (d) { return projection(d.Location)[0]; })
   		.attr("cy", function (d) { return projection(d.Location)[1]; })
   		.attr("r", "2px")
-  		.attr("fill", "red");
+  		.attr("fill", pickColor)
+      .on("mouseover", function(d){
+        tooltip.text(d.Category + ", "
+          + d.Date + ", "
+          + d.Description);
+        return tooltip.style("visibility", "visible");
+      })
+	    .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
+	    .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
+      .style("opacity", 0.2);
+
+};
+
+// set the color for each Category of crime [3]
+var colors = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]); //[6]
+var pickColor = function (d) {
+  switch (d.Category) {
+    case "NON-CRIMINAL":
+      //console.log(colors(0));
+      return colors(0);
+
+      break;
+
+    case "LARCENY/THEFT":
+      return colors(8);
+
+      break;
+
+    case "DRUG/NARCOTIC":
+      return colors(2);
+
+      break;
+
+    case "VEHICLE THEFT":
+      return colors(4);
+
+      break;
+
+    case "ASSAULT":
+      return colors(3);
+
+      break;
+
+    default:
+      return colors(7);
+
+  }
+}
+
+function clickButton(){
+  console.log("Button clicked!");
+
+
 };
 
 
 // References
-  // Plotting a point on a map: http://bl.ocks.org/phil-pedruco/7745589
-
+  // [1] Plotting a point on a map: http://bl.ocks.org/phil-pedruco/7745589
+  // [2] Loading JSON data: https://github.com/mbostock/d3/wiki/Requests
+  // [3] Colors in d3: https://github.com/mbostock/d3/wiki/Ordinal-Scales#category10
+                    // http://www.jeromecukier.net/blog/2011/08/11/d3-scales-and-color/
+  // [4] Dynamic Filtering with HTML elements: https://gist.github.com/sytpp/3a070a6ed6834169a85b#file-ecoshoulds-tab
+                                            // http://stackoverflow.com/questions/28922246/dynamic-filtering-in-d3-with-html-input
+  // [5] Setting colors so domain is 0 - 9 to pick colors
 </script>
 </body>
