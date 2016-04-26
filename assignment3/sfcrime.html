@@ -26,7 +26,8 @@ text {
 </style>
 <body>
 <input type="range" min="1" id="dataSlider">
-<input type="button" id="button" value="Button" onClick="clickButton()">
+<input type="button" id="button" value="Assault" onClick="showAssault()">
+<input type="button" id="button" value="Battery" onClick="showBattery()">
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
@@ -85,12 +86,12 @@ function mapIt(data) {
   		.attr("fill", pickColor)
       .on("mouseover", function(d){
         tooltip.text(d.Category + ", "
-          + d.Date + ", "
-          + d.Description);
+          + d.Date);
         return tooltip.style("visibility", "visible");
       })
 	    .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
 	    .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
+      .attr("data-id", function(d){return d.Category;})
       .style("opacity", 0.3);
 
 };
@@ -121,7 +122,8 @@ var pickColor = function (d) {
       break;
 
     case "ASSAULT":
-      return colors(3);
+      return "red";
+      //return colors(3);
 
       break;
 
@@ -131,19 +133,16 @@ var pickColor = function (d) {
   }
 }
 
-function clickButton(){
+function showAssault(){
   console.log("Button clicked!");
   svg.selectAll("circle")
-    .attr("r", function (d){
-      if (d.Category === "ASSAULT") {
-        return "4px";
-      }
-      else {
-        return "2px";
-      };
-    });
+    .filter(function (d) { return d.Category === "ASSAULT";}) //[6]
+    .attr("r", "4px");
+  };
 
-};
+function showBattery() {
+
+}
 
 
 // References
@@ -154,5 +153,7 @@ function clickButton(){
   // [4] Dynamic Filtering with HTML elements: https://gist.github.com/sytpp/3a070a6ed6834169a85b#file-ecoshoulds-tab
                                             // http://stackoverflow.com/questions/28922246/dynamic-filtering-in-d3-with-html-input
   // [5] Setting colors so domain is 0 - 9 to pick colors
+  // [6] Filtering data using the filer function: http://stackoverflow.com/questions/25711108/how-to-select-elements-according-to-an-attributefill-color-in-d3-js-with-selec
+
 </script>
 </body>
