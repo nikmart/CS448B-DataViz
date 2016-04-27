@@ -162,6 +162,7 @@ var drag = d3.behavior.drag()
           var coords = projection.invert([d.x, d.y]); //[8]
           console.log(coords);
           d3.select(this).attr("fill", "black");
+          filterHome(coords);
           //filter the dat to only show things within a certain mile range
         });
 
@@ -178,12 +179,27 @@ var home = svg.selectAll(".home")
   .attr("fill", "black")
   .call(drag);
 
+//Filter the data based on the house position
+// get the postion of the house
+// filter the data if it is within radius using a filter
 
+var earthRad = 3959.547; //[10]
+//compute the distance between the points [9]
+var distRad = d3.geo.distance([-122.458220811697, 37.7633123961354],[-122.447596140416, 37.7106886165247]);
+console.log("distance = " + distRad*earthRad);
 
-
-
-
-
+function filterHome(coords) {
+  svg.selectAll("circle")
+    .attr("r", function (d) {
+      var dist = d3.geo.distance(coords, d.Location) * earthRad; //compute the distance
+      //if the distance is less than 1 mi log it
+      if (dist >= 0.5) {
+        //console.log(dist);
+        return ; //return nothing to clear the circle radius
+      }
+      else{ return "2px";}
+    })
+}
 
 
 
@@ -199,5 +215,7 @@ var home = svg.selectAll(".home")
   // [7] Dragable SVG elements: http://ssun.azurewebsites.net/creating-a-draggable-object-in-d3/
   // [8] Inverse pixel coordinates to lat/long: http://bl.ocks.org/nkhine/2876083
                                                 //http://stackoverflow.com/questions/10884886/d3js-how-to-get-lat-log-geocoordinates-from-mouse-click
+  // [9] Computing the distance between points on the map: https://github.com/mbostock/d3/wiki/Geo-Paths#distance
+  // [10] Convert radians to miles on earth: http://stackoverflow.com/questions/3878702/mongodb-bound-queries-how-do-i-convert-mile-to-radian
 </script>
 </body>
