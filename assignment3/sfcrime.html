@@ -25,7 +25,7 @@ text {
 
 </style>
 <body>
-<input type="range" min="1" id="dataSlider">
+<input type="range" min="0.1" max="7" step = "0.1" id="dataSlider" onChange="readRange()">
 <input type="button" id="button" value="Assault" onClick="showAssault()">
 <input type="button" id="button" value="Battery" onClick="showBattery()">
 <script src="//d3js.org/d3.v3.min.js"></script>
@@ -168,15 +168,25 @@ var drag = d3.behavior.drag()
 
 
 // Add the house and work points that you can drag [7]
-var home = svg.selectAll(".home")
-  .data([{ x: 0, y: 0 }])
-  .enter()
+var home = svg.selectAll(".home").data([{ x: 0, y: 0 }])
+home.enter()
   .append("rect")
   .attr("x", function (d) {return d.x;})
   .attr("y", function (d) {return d.y;})
   .attr("width", 10)
   .attr("height", 10)
   .attr("fill", "black")
+  .call(drag);
+
+// Add the work point that you can drag [7]
+var work= svg.selectAll(".work").data([{ x: 0, y: 0 }])
+work.enter()
+  .append("rect")
+  .attr("x", function (d) {return d.x;})
+  .attr("y", function (d) {return d.y + 20;})
+  .attr("width", 10)
+  .attr("height", 10)
+  .attr("fill", "green")
   .call(drag);
 
 //Filter the data based on the house position
@@ -187,13 +197,14 @@ var earthRad = 3959.547; //[10]
 //compute the distance between the points [9]
 var distRad = d3.geo.distance([-122.458220811697, 37.7633123961354],[-122.447596140416, 37.7106886165247]);
 console.log("distance = " + distRad*earthRad);
+var homeFilterDist = 50;
 
 function filterHome(coords) {
   svg.selectAll("circle")
     .attr("r", function (d) {
       var dist = d3.geo.distance(coords, d.Location) * earthRad; //compute the distance
       //if the distance is less than 1 mi log it
-      if (dist >= 0.5) {
+      if (dist >= homeFilterDist) {
         //console.log(dist);
         return ; //return nothing to clear the circle radius
       }
@@ -201,6 +212,12 @@ function filterHome(coords) {
     })
 }
 
+//read the slider value of distance radius slider
+function readRange(){
+  var slider = document.getElementById('dataSlider').value;
+  console.log("Slider:", slider);
+  homeFilterDist = slider;
+}
 
 
 // References
@@ -217,5 +234,6 @@ function filterHome(coords) {
                                                 //http://stackoverflow.com/questions/10884886/d3js-how-to-get-lat-log-geocoordinates-from-mouse-click
   // [9] Computing the distance between points on the map: https://github.com/mbostock/d3/wiki/Geo-Paths#distance
   // [10] Convert radians to miles on earth: http://stackoverflow.com/questions/3878702/mongodb-bound-queries-how-do-i-convert-mile-to-radian
+  // [11] HTML range sliders: http://www.html5tutorial.info/html5-range.php
 </script>
 </body>
