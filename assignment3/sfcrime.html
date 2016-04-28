@@ -54,16 +54,21 @@
   <input type="button" id="addHome" value="Add Home" onClick="addHome()" value="2">
   <br>
   <input type="button" id="addWork" value="Add Work" onClick="addWork()" value="2">
-  <br>
-  <input type="button" id="readHomeRadius" value="read jquery home" onClick="readHomeRadius()">
+
+  <div id="format">
+    <input type="checkbox" id="check1" name="assaultCheck"><label for="check1">ASSAULT</label>
+    <input type="checkbox" id="check2" name="larcenyCheck"><label for="check2">LARCENY</label>
+    <input type="checkbox" id="check3" name="drugsCheck"><label for="check3">DRUGS</label>
+  </div>
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
-//jQuery elements
+//................  jQuery elements for controls ................//
 $(function() {
+  // add slider for distance radii [12]
   $( "#homeSlider" ).slider({
-    value:2,
+    value:3,
     min: 0.1,
     max: 4,
     step: 0.1,
@@ -74,7 +79,7 @@ $(function() {
   $( "#homeRadius" ).val( $( "#homeSlider" ).slider( "value" ) );
 
   $( "#workSlider" ).slider({
-    value:2,
+    value:3,
     min: 0.1,
     max: 4,
     step: 0.1,
@@ -85,7 +90,30 @@ $(function() {
   $( "#workRadius" ).val( $( "#workSlider" ).slider( "value" ) );
 
 
+  $('input[type="checkbox"]').click(function(){
+              if($(this).prop("checked") == true){
+                  //alert("Checkbox is checked.");
+                  switch ($(this).attr("name")) {
+                    case "assaultCheck":
+                      assaultFlag = true;
+                      break;
+                    default:
+                  }
+              }
+              else if($(this).prop("checked") == false){
+                switch ($(this).attr("name")) {
+                  case "assaultCheck":
+                    assaultFlag = false;
+                    break;
+                  default:
+                }
+              }
+          });
+
+
 });
+//............................................................................//
+
 
 //.............. SF MAP ............//
 // Set up size
@@ -149,7 +177,7 @@ function mapIt(data) {
 	    .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
 	    .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
       .attr("data-id", function(d){return d.Category;})
-      .style("opacity", 0.3);
+      .style("opacity", 0.2);
 
 };
 
@@ -215,7 +243,7 @@ var drag = d3.behavior.drag()
           var coords = projection.invert([d.x, d.y]); //[8]
           console.log(coords);
           d3.select(this).attr("fill", "black");
-          filterHome(coords);
+          filterHome();
 
           //filter the dat to only show things within a certain mile range
         });
@@ -245,7 +273,9 @@ function readWorkRadius(){
   workFilterDist = slider;
 }
 
-function filterHome(coords) {
+
+//var assualtFlag = $('input[name="assaultCheck"]').prop('checked');
+function filterHome() {
   console.log(home.data()[0].x);
   // get the value of home and work and convert to lat/long for comparison
   var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
@@ -254,7 +284,8 @@ function filterHome(coords) {
   readHomeRadius();
   readWorkRadius();
 
-  svg.selectAll("circle")
+  // show only the intersection of the wto circles
+  intersection = svg.selectAll("circle")
     .attr("r", function (d) {
       var homeDist = d3.geo.distance(homeCoords, d.Location) * earthRad; //compute the distance
       var workDist = d3.geo.distance(workCoords, d.Location) * earthRad; //compute the distance
@@ -264,17 +295,26 @@ function filterHome(coords) {
         return "2px"; //return nothing to clear the circle radius
       }
       else{ return ;}
-    })
+    });
+
+  var assaultFlag = $('input[name="assaultCheck"]').prop('checked');
+  var larcenyFlag = $('input[name="larcenyCheck"]').prop('checked');
+  if (assaultFlag) {
+    intersection.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
+    .style("opacity", "1");
+  }
+  if (larcenyFlag) {
+    intersection.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    intersection.filter(function (d) { return d.Category === "ASSAULT/THEFT";}) //[6]
+    .style("opacity", "0.2");
+  }
 }
 
-//read the slider value of distance radius slider
-function readHomeRad(){
-  var slider = document.getElementById('homeRad').value;
-  console.log("HomeRad:", slider);
-  homeFilterDist = slider;
-}
 
-//variable to hole our home and work elements
+//variable to hold our home and work elements
 var home;
 var work;
 
@@ -295,6 +335,7 @@ function addHome() {
         return "translate(" + [ d.x, d.y ] + ")"
     })
     .call(drag);
+
 }
 
 function addWork() {
@@ -335,5 +376,8 @@ function addWork() {
   // [9] Computing the distance between points on the map: https://github.com/mbostock/d3/wiki/Geo-Paths#distance
   // [10] Convert radians to miles on earth: http://stackoverflow.com/questions/3878702/mongodb-bound-queries-how-do-i-convert-mile-to-radian
   // [11] HTML range sliders: http://www.html5tutorial.info/html5-range.php
+  // [12] jQuery sliders: https://jqueryui.com/slider/#multiple-vertical
+  // [13] jQuery checkboxes: https://jqueryui.com/button/#checkbox
+                             //http://www.tutorialrepublic.com/faq/how-to-check-a-checkbox-is-checked-or-not-using-jquery.php
 </script>
 </body>
