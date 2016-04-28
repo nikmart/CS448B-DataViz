@@ -95,8 +95,12 @@ $(function() {
   $( "#workRadius" ).val( $( "#workSlider" ).slider( "value" ) );
 
   $(':checkbox').change(function () {
+    //if the home flag turns on, put down the home
+    // if($('input[name="homeCheck"]').prop('checked')) {
+    //   addHome();
+    // }
     //filter the data after a change on the check box
-    filterHome();
+    filter();
   });
 
 });
@@ -231,9 +235,9 @@ var drag = d3.behavior.drag()
           var coords = projection.invert([d.x, d.y]); //[8]
           console.log(coords);
           d3.select(this).attr("fill", "black");
-          filterHome();
+          filter();
 
-          //filter the dat to only show things within a certain mile range
+          //filter the data to only show things within a certain mile range
         });
 
 //Filter the data based on the house position
@@ -264,10 +268,47 @@ function readWorkRadius(){
 
 
 //var assualtFlag = $('input[name="assaultCheck"]').prop('checked');
-function filterHome() {
-  if ($('input[name="homeCheck"]').prop('checked')) {
-    console.log("home checked!");
+function filter() {
+  var homeFlag = $('input[name="homeCheck"]').prop('checked');
+  var workFlag = $('input[name="workCheck"]').prop('checked');
+
+  if (homeFlag && workFlag) {
+    filterIntersection();
   }
+  else if (homeFlag) {
+    filterHome();
+  }
+  else if (workFlag) {
+    //filterWork();
+  }
+  else {
+    allData = svg.selectAll("circle")
+      .attr("r", "2px");
+    filterCatergories(allData);
+  }
+
+}
+
+function filterHome() {
+  // get the value of home and work and convert to lat/long for comparison
+  var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
+  homeFilterDist = $( "#homeSlider" ).slider( "value" );
+  homes = svg.selectAll("circle")
+    .attr("r", function (d) {
+      var homeDist = d3.geo.distance(homeCoords, d.Location) * earthRad; //compute the distance
+      //if the distance is less than 1 mi log it
+      if (homeDist <= homeFilterDist) {
+        //console.log(dist);
+        return "2px"; //return nothing to clear the circle radius
+      }
+      else{ return ;}
+    });
+
+  filterCatergories(homes);
+
+}
+
+function filterIntersection() {
   // get the value of home and work and convert to lat/long for comparison
   var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
   var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
@@ -288,25 +329,29 @@ function filterHome() {
       else{ return ;}
     });
 
+  filterCatergories(intersection);
+}
+
+function filterCatergories(dsubset) {
   //filter the data for different crime types by increasing the opacity
   var assaultFlag = $('input[name="assaultCheck"]').prop('checked');
   var larcenyFlag = $('input[name="larcenyCheck"]').prop('checked');
 
   if (assaultFlag) {
-    intersection.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
+    dsubset.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
     .style("opacity", "1");
   }
   else {
-    intersection.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
+    dsubset.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
     .style("opacity", "0.2");
   }
 
   if (larcenyFlag) {
-    intersection.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
+    dsubset.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
     .style("opacity", "1");
   }
   else {
-    intersection.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
+    dsubset.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
     .style("opacity", "0.2");
   }
 }
