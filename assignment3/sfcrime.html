@@ -49,8 +49,6 @@
 
   <div id="workSlider" style="width:260px; margin:15px;"></div>
 
-  <input type="button" id="button" value="Assault" onClick="showAssault()">
-  <br>
   <input type="button" id="addHome" value="Add Home" onClick="addHome()" value="2">
   <br>
   <input type="button" id="addWork" value="Add Work" onClick="addWork()" value="2">
@@ -79,6 +77,9 @@ $(function() {
     step: 0.1,
     slide: function( event, ui ) {
       $( "#homeRadius" ).val( ui.value );
+    },
+    stop: function( event, ui ) {
+      filter();
     }
   });
   $( "#homeRadius" ).val( $( "#homeSlider" ).slider( "value" ) );
@@ -90,6 +91,9 @@ $(function() {
     step: 0.1,
     slide: function( event, ui ) {
       $( "#workRadius" ).val( ui.value );
+    },
+    stop: function( event, ui ) {
+      filter(); // use on stop to improve interactivity
     }
   });
   $( "#workRadius" ).val( $( "#workSlider" ).slider( "value" ) );
@@ -253,20 +257,6 @@ console.log("distance = " + distRad*earthRad);
 var homeFilterDist = 50;
 var workFilterDist = 50;
 
-//read the slider value of distance radius slider
-function readHomeRadius(){
-  var slider = $( "#homeSlider" ).slider( "value" );
-  console.log("HomeRad:", slider);
-  homeFilterDist = slider;
-}
-
-function readWorkRadius(){
-  var slider = $( "#workSlider" ).slider( "value" );
-  console.log("WorkRad:", slider);
-  workFilterDist = slider;
-}
-
-
 //var assualtFlag = $('input[name="assaultCheck"]').prop('checked');
 function filter() {
   var homeFlag = $('input[name="homeCheck"]').prop('checked');
@@ -279,14 +269,13 @@ function filter() {
     filterHome();
   }
   else if (workFlag) {
-    //filterWork();
+    filterWork();
   }
   else {
     allData = svg.selectAll("circle")
       .attr("r", "2px");
     filterCatergories(allData);
   }
-
 }
 
 function filterHome() {
@@ -305,7 +294,24 @@ function filterHome() {
     });
 
   filterCatergories(homes);
+}
 
+function filterWork() {
+  // get the value of home and work and convert to lat/long for comparison
+  var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
+  workFilterDist = $( "#workSlider" ).slider( "value" );
+  works = svg.selectAll("circle")
+    .attr("r", function (d) {
+      var workDist = d3.geo.distance(workCoords, d.Location) * earthRad; //compute the distance
+      //if the distance is less than 1 mi log it
+      if (workDist <= workFilterDist) {
+        //console.log(dist);
+        return "2px"; //return nothing to clear the circle radius
+      }
+      else{ return ;}
+    });
+
+  filterCatergories(works);
 }
 
 function filterIntersection() {
@@ -313,8 +319,8 @@ function filterIntersection() {
   var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
   var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
 
-  readHomeRadius();
-  readWorkRadius();
+  homeFilterDist = $( "#homeSlider" ).slider( "value" );
+  workFilterDist = $( "#workSlider" ).slider( "value" );
 
   // show only the intersection of the two circles if home and work are there
   intersection = svg.selectAll("circle")
