@@ -252,16 +252,18 @@ function filterHome(coords) {
   var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
 
   readHomeRadius();
+  readWorkRadius();
 
   svg.selectAll("circle")
     .attr("r", function (d) {
-      var dist = d3.geo.distance(coords, d.Location) * earthRad; //compute the distance
+      var homeDist = d3.geo.distance(homeCoords, d.Location) * earthRad; //compute the distance
+      var workDist = d3.geo.distance(workCoords, d.Location) * earthRad; //compute the distance
       //if the distance is less than 1 mi log it
-      if (dist >= homeFilterDist) {
+      if (homeDist <= homeFilterDist && workDist <= workFilterDist) {
         //console.log(dist);
-        return ; //return nothing to clear the circle radius
+        return "2px"; //return nothing to clear the circle radius
       }
-      else{ return "2px";}
+      else{ return ;}
     })
 }
 
