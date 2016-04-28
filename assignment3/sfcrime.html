@@ -23,11 +23,19 @@ text {
   color: white;
 }
 
+.home {
+
+}
+
 </style>
 <body>
-<input type="range" min="0.1" max="7" step = "0.1" id="dataSlider" onChange="readRange()">
 <input type="button" id="button" value="Assault" onClick="showAssault()">
-<input type="button" id="button" value="Battery" onClick="showBattery()">
+<input type="button" id="addHome" value="Add Home" onClick="addHome()">
+<input type="range" min="0.1" max="7" step = "0.1" id="dataSlider" onChange="readRange()">
+<br>
+<input type="button" id="addWork" value="Add Work" onClick="addWork()">
+<input type="range" min="0.1" max="7" step = "0.1" id="dataSlider" onChange="readRange()">
+<br>
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
@@ -141,9 +149,7 @@ function showAssault(){
     .attr("r", "4px");
   };
 
-function showBattery() {
 
-}
 
 // Define drag beavior
 var drag = d3.behavior.drag()
@@ -165,29 +171,6 @@ var drag = d3.behavior.drag()
           filterHome(coords);
           //filter the dat to only show things within a certain mile range
         });
-
-
-// Add the house and work points that you can drag [7]
-var home = svg.selectAll(".home").data([{ x: 0, y: 0 }])
-home.enter()
-  .append("rect")
-  .attr("x", function (d) {return d.x;})
-  .attr("y", function (d) {return d.y;})
-  .attr("width", 10)
-  .attr("height", 10)
-  .attr("fill", "black")
-  .call(drag);
-
-// Add the work point that you can drag [7]
-var work= svg.selectAll(".work").data([{ x: 0, y: 0 }])
-work.enter()
-  .append("rect")
-  .attr("x", function (d) {return d.x;})
-  .attr("y", function (d) {return d.y + 20;})
-  .attr("width", 10)
-  .attr("height", 10)
-  .attr("fill", "green")
-  .call(drag);
 
 //Filter the data based on the house position
 // get the postion of the house
@@ -219,6 +202,43 @@ function readRange(){
   homeFilterDist = slider;
 }
 
+function addHome() {
+  // Add the house and work points that you can drag [7]
+  var home = svg.selectAll(".home").data([{ x: 0, y: 0 }])
+  home.enter()
+    .append("rect")
+    .attr("x", function (d) {return d.x;})
+    .attr("y", function (d) {return d.y;})
+    .attr("width", 10)
+    .attr("height", 10)
+    .attr("fill", "black")
+    .attr("transform", function(d,i){
+        //console.log(d.x,d.y);
+        d.x = 300;  //update the home to a nice spot on the map
+        d.y = 400;
+        return "translate(" + [ d.x, d.y ] + ")"
+    })
+    .call(drag);
+}
+
+function addWork() {
+  // Add the house and work points that you can drag [7]
+  var home = svg.selectAll(".work").data([{ x: 0, y: 0 }])
+  home.enter()
+    .append("rect")
+    .attr("x", function (d) {return d.x;})
+    .attr("y", function (d) {return d.y;})
+    .attr("width", 10)
+    .attr("height", 10)
+    .attr("fill", "green")
+    .attr("transform", function(d,i){
+        //console.log(d.x,d.y);
+        d.x = 500;  //update the work to a nice spot on the map near the waterfront
+        d.y = 200;
+        return "translate(" + [ d.x, d.y ] + ")"
+    })
+    .call(drag);
+}
 
 // References
   // [1] Plotting a point on a map: http://bl.ocks.org/phil-pedruco/7745589
