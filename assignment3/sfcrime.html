@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<head>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+</head>
 <style>
-
-text {
-  font: bold 20px monospace;
-}
 
 .enter {
   fill: green;
@@ -27,17 +28,64 @@ text {
 
 }
 
+.work {
+
+}
+
 </style>
 <body>
-<input type="button" id="button" value="Assault" onClick="showAssault()">
-<input type="button" id="addHome" value="Add Home" onClick="addHome()">
-<input type="range" min="0.1" max="7" step = "0.1" id="dataSlider" onChange="readRange()">
-<br>
-<input type="button" id="addWork" value="Add Work" onClick="addWork()">
-<input type="range" min="0.1" max="7" step = "0.1" id="dataSlider" onChange="readRange()">
-<br>
+
+  <p>
+    <label for="homeRadius">Radius from Home:</label>
+    <input type="text" id="homeRadius" readonly style="border:0; font-weight:bold;">
+  </p>
+
+  <div id="homeSlider" style="width:260px; margin:15px;"></div>
+
+  <p>
+    <label for="workRadius">Radius from Work:</label>
+    <input type="text" id="workRadius" readonly style="border:0; font-weight:bold;">
+  </p>
+
+  <div id="workSlider" style="width:260px; margin:15px;"></div>
+
+  <input type="button" id="button" value="Assault" onClick="showAssault()">
+  <br>
+  <input type="button" id="addHome" value="Add Home" onClick="addHome()" value="2">
+  <br>
+  <input type="button" id="addWork" value="Add Work" onClick="addWork()" value="2">
+  <br>
+  <input type="button" id="readHomeRadius" value="read jquery home" onClick="readHomeRadius()">
+
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
+
+//jQuery elements
+$(function() {
+  $( "#homeSlider" ).slider({
+    value:2,
+    min: 0.1,
+    max: 4,
+    step: 0.1,
+    slide: function( event, ui ) {
+      $( "#homeRadius" ).val( ui.value );
+    }
+  });
+  $( "#homeRadius" ).val( $( "#homeSlider" ).slider( "value" ) );
+
+  $( "#workSlider" ).slider({
+    value:2,
+    min: 0.1,
+    max: 4,
+    step: 0.1,
+    slide: function( event, ui ) {
+      $( "#workRadius" ).val( ui.value );
+    }
+  });
+  $( "#workRadius" ).val( $( "#workSlider" ).slider( "value" ) );
+
+
+});
 
 //.............. SF MAP ............//
 // Set up size
@@ -150,7 +198,6 @@ function showAssault(){
   };
 
 
-
 // Define drag beavior
 var drag = d3.behavior.drag()
         .on('dragstart', function() { d3.select(this).attr("fill", "red"); })
@@ -169,6 +216,7 @@ var drag = d3.behavior.drag()
           console.log(coords);
           d3.select(this).attr("fill", "black");
           filterHome(coords);
+
           //filter the dat to only show things within a certain mile range
         });
 
@@ -180,9 +228,31 @@ var earthRad = 3959.547; //[10]
 //compute the distance between the points [9]
 var distRad = d3.geo.distance([-122.458220811697, 37.7633123961354],[-122.447596140416, 37.7106886165247]);
 console.log("distance = " + distRad*earthRad);
+
 var homeFilterDist = 50;
+var workFilterDist = 50;
+
+//read the slider value of distance radius slider
+function readHomeRadius(){
+  var slider = $( "#homeSlider" ).slider( "value" );
+  console.log("HomeRad:", slider);
+  homeFilterDist = slider;
+}
+
+function readWorkRadius(){
+  var slider = $( "#workSlider" ).slider( "value" );
+  console.log("WorkRad:", slider);
+  workFilterDist = slider;
+}
 
 function filterHome(coords) {
+  console.log(home.data()[0].x);
+  // get the value of home and work and convert to lat/long for comparison
+  var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
+  var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
+
+  readHomeRadius();
+
   svg.selectAll("circle")
     .attr("r", function (d) {
       var dist = d3.geo.distance(coords, d.Location) * earthRad; //compute the distance
@@ -196,16 +266,20 @@ function filterHome(coords) {
 }
 
 //read the slider value of distance radius slider
-function readRange(){
-  var slider = document.getElementById('dataSlider').value;
-  console.log("Slider:", slider);
+function readHomeRad(){
+  var slider = document.getElementById('homeRad').value;
+  console.log("HomeRad:", slider);
   homeFilterDist = slider;
 }
 
+//variable to hole our home and work elements
+var home;
+var work;
+
 function addHome() {
   // Add the house and work points that you can drag [7]
-  var home = svg.selectAll(".home").data([{ x: 0, y: 0 }])
-  home.enter()
+  home = svg.selectAll(".home")
+    .data([{ x: 0, y: 0 }]).enter()
     .append("rect")
     .attr("x", function (d) {return d.x;})
     .attr("y", function (d) {return d.y;})
@@ -223,8 +297,8 @@ function addHome() {
 
 function addWork() {
   // Add the house and work points that you can drag [7]
-  var home = svg.selectAll(".work").data([{ x: 0, y: 0 }])
-  home.enter()
+  work = svg.selectAll(".work").data([{ x: 0, y: 0 }])
+    .enter()
     .append("rect")
     .attr("x", function (d) {return d.x;})
     .attr("y", function (d) {return d.y;})
@@ -239,6 +313,10 @@ function addWork() {
     })
     .call(drag);
 }
+
+
+
+
 
 // References
   // [1] Plotting a point on a map: http://bl.ocks.org/phil-pedruco/7745589
