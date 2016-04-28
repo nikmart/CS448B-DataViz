@@ -55,10 +55,15 @@
   <br>
   <input type="button" id="addWork" value="Add Work" onClick="addWork()" value="2">
 
-  <div id="format">
+  <div id="catergories">
     <input type="checkbox" id="check1" name="assaultCheck"><label for="check1">ASSAULT</label>
     <input type="checkbox" id="check2" name="larcenyCheck"><label for="check2">LARCENY</label>
     <input type="checkbox" id="check3" name="drugsCheck"><label for="check3">DRUGS</label>
+  </div>
+
+  <div id="locations">
+    <input type="checkbox" name="homeCheck"><label>Home</label>
+    <input type="checkbox" name="workCheck"><label>Work</label>
   </div>
 
 <script src="//d3js.org/d3.v3.min.js"></script>
@@ -89,6 +94,10 @@ $(function() {
   });
   $( "#workRadius" ).val( $( "#workSlider" ).slider( "value" ) );
 
+  $(':checkbox').change(function () {
+    //filter the data after a change on the check box
+    filterHome();
+  });
 
 });
 //............................................................................//
@@ -150,7 +159,7 @@ function mapIt(data) {
   		.attr("fill", pickColor)
       .on("mouseover", function(d){
         tooltip.text(d.Category + ", "
-          + d.Date);
+          + d.Date + ", " + d.District);
         return tooltip.style("visibility", "visible");
       })
 	    .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
@@ -256,7 +265,9 @@ function readWorkRadius(){
 
 //var assualtFlag = $('input[name="assaultCheck"]').prop('checked');
 function filterHome() {
-  console.log(home.data()[0].x);
+  if ($('input[name="homeCheck"]').prop('checked')) {
+    console.log("home checked!");
+  }
   // get the value of home and work and convert to lat/long for comparison
   var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
   var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
@@ -264,7 +275,7 @@ function filterHome() {
   readHomeRadius();
   readWorkRadius();
 
-  // show only the intersection of the wto circles
+  // show only the intersection of the two circles if home and work are there
   intersection = svg.selectAll("circle")
     .attr("r", function (d) {
       var homeDist = d3.geo.distance(homeCoords, d.Location) * earthRad; //compute the distance
@@ -280,16 +291,22 @@ function filterHome() {
   //filter the data for different crime types by increasing the opacity
   var assaultFlag = $('input[name="assaultCheck"]').prop('checked');
   var larcenyFlag = $('input[name="larcenyCheck"]').prop('checked');
+
   if (assaultFlag) {
     intersection.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
     .style("opacity", "1");
   }
+  else {
+    intersection.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
+    .style("opacity", "0.2");
+  }
+
   if (larcenyFlag) {
     intersection.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
     .style("opacity", "1");
   }
   else {
-    intersection.filter(function (d) { return d.Category === "ASSAULT/THEFT";}) //[6]
+    intersection.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
     .style("opacity", "0.2");
   }
 }
