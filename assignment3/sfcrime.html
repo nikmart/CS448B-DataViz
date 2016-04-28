@@ -56,7 +56,7 @@
   <div id="catergories">
     <input type="checkbox" id="check1" name="assaultCheck"><label for="check1">ASSAULT</label>
     <input type="checkbox" id="check2" name="larcenyCheck"><label for="check2">LARCENY</label>
-    <input type="checkbox" id="check3" name="drugsCheck"><label for="check3">DRUGS</label>
+    <input type="checkbox" id="check3" name="drugCheck"><label for="check3">DRUGS</label>
   </div>
 
   <div id="locations">
@@ -93,17 +93,12 @@ $(function() {
       $( "#workRadius" ).val( ui.value );
     },
     stop: function( event, ui ) {
-      filter(); // use on stop to improve interactivity
+      filter(); // use on stop to improve interactivity //[14]
     }
   });
   $( "#workRadius" ).val( $( "#workSlider" ).slider( "value" ) );
 
   $(':checkbox').change(function () {
-    //if the home flag turns on, put down the home
-    // if($('input[name="homeCheck"]').prop('checked')) {
-    //   addHome();
-    // }
-    //filter the data after a change on the check box
     filter();
   });
 
@@ -140,9 +135,6 @@ var tooltip = d3.select("body")
 	.style("position", "absolute")
 	.style("z-index", "10")
 	.style("visibility", "hidden");
-
-// var data = [[-122.458220811697, 37.7633123961354], [-122.447596140416, 37.7106886165247]]; //sample data
-// console.log(data[1] + ", " + data[0]);
 
 // loading the json data [2]
 var crimes;
@@ -342,6 +334,7 @@ function filterCatergories(dsubset) {
   //filter the data for different crime types by increasing the opacity
   var assaultFlag = $('input[name="assaultCheck"]').prop('checked');
   var larcenyFlag = $('input[name="larcenyCheck"]').prop('checked');
+  var drugFlag = $('input[name="drugCheck"]').prop('checked');
 
   if (assaultFlag) {
     dsubset.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
@@ -349,7 +342,7 @@ function filterCatergories(dsubset) {
   }
   else {
     dsubset.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
-    .style("opacity", "0.2");
+    .style("opacity", "0.1");
   }
 
   if (larcenyFlag) {
@@ -358,8 +351,19 @@ function filterCatergories(dsubset) {
   }
   else {
     dsubset.filter(function (d) { return d.Category === "LARCENY/THEFT";}) //[6]
-    .style("opacity", "0.2");
+    .style("opacity", "0.1");
   }
+
+  if (drugFlag) {
+    dsubset.filter(function (d) { return d.Category === "DRUG/NARCOTIC";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    dsubset.filter(function (d) { return d.Category === "DRUG/NARCOTIC";}) //[6]
+    .style("opacity", "0.1");
+  }
+
+
 }
 
 
@@ -428,5 +432,6 @@ function addWork() {
   // [12] jQuery sliders: https://jqueryui.com/slider/#multiple-vertical
   // [13] jQuery checkboxes: https://jqueryui.com/button/#checkbox
                              //http://www.tutorialrepublic.com/faq/how-to-check-a-checkbox-is-checked-or-not-using-jquery.php
+  // [14] jQuery slider actions: https://api.jqueryui.com/slider/#event-stop
 </script>
 </body>
