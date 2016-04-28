@@ -90,27 +90,6 @@ $(function() {
   $( "#workRadius" ).val( $( "#workSlider" ).slider( "value" ) );
 
 
-  $('input[type="checkbox"]').click(function(){
-              if($(this).prop("checked") == true){
-                  //alert("Checkbox is checked.");
-                  switch ($(this).attr("name")) {
-                    case "assaultCheck":
-                      assaultFlag = true;
-                      break;
-                    default:
-                  }
-              }
-              else if($(this).prop("checked") == false){
-                switch ($(this).attr("name")) {
-                  case "assaultCheck":
-                    assaultFlag = false;
-                    break;
-                  default:
-                }
-              }
-          });
-
-
 });
 //............................................................................//
 
@@ -257,6 +236,7 @@ var earthRad = 3959.547; //[10]
 var distRad = d3.geo.distance([-122.458220811697, 37.7633123961354],[-122.447596140416, 37.7106886165247]);
 console.log("distance = " + distRad*earthRad);
 
+//set initial distance really high to show all the data
 var homeFilterDist = 50;
 var workFilterDist = 50;
 
@@ -297,6 +277,7 @@ function filterHome() {
       else{ return ;}
     });
 
+  //filter the data for different crime types by increasing the opacity
   var assaultFlag = $('input[name="assaultCheck"]').prop('checked');
   var larcenyFlag = $('input[name="larcenyCheck"]').prop('checked');
   if (assaultFlag) {
