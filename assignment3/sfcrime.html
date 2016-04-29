@@ -64,6 +64,12 @@
     <input type="checkbox" name="workCheck"><label>Work</label>
   </div>
 
+  <p>
+  <label for="time">Time:</label>
+  <input type="text" id="time" readonly style="border:0; font-weight:bold;">
+  </p>
+  <div id="time-slider" style="width:260px; margin:15px;"></div>
+
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
@@ -101,6 +107,33 @@ $(function() {
   $(':checkbox').change(function () {
     filter();
   });
+
+  $("#date-slider").slider({
+    range: true,
+    min: 1,
+    max: 15,
+    values: [1,15],
+    slide: function(event, ui){
+      $("#days").val("April " + ui.values[0] + "- " + ui.values[1]);
+    }
+  })
+  $( "#days" ).val( "April " + $( "#date-slider" ).slider( "values", 0 ) +
+      " - " + $( "#date-slider" ).slider( "values", 1 ) );
+
+  $("#time-slider").slider({
+    range: true,
+    min: 0,
+    max: 23,
+    values: [0,23],
+    stop: function( event, ui ) {
+      filter(); // use on stop to improve interactivity //[14]
+    },
+    slide: function(event, ui){
+      $("#time").val(ui.values[0] + ":00 - " + ui.values[1] + ":00");
+    }
+  })
+  $( "#time" ).val( $( "#time-slider" ).slider( "values", 0 ) +
+      ":00 - " + $( "#time-slider" ).slider( "values", 1 ) + ":00");
 
 });
 //............................................................................//
@@ -159,13 +192,13 @@ function mapIt(data) {
   		.attr("fill", pickColor)
       .on("mouseover", function(d){
         tooltip.text(d.Category + ", "
-          + d.Date + ", " + d.District);
+          + d.Date + ", " + d.Time);
         return tooltip.style("visibility", "visible");
       })
 	    .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
 	    .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
       .attr("data-id", function(d){return d.Category;})
-      .style("opacity", 0.2);
+      .style("opacity", .2);
 
 };
 
@@ -197,7 +230,6 @@ var pickColor = function (d) {
     case "ASSAULT":
       return "red";
       //return colors(3);
-
       break;
 
     default:
@@ -251,6 +283,8 @@ var workFilterDist = 50;
 
 //var assualtFlag = $('input[name="assaultCheck"]').prop('checked');
 function filter() {
+  allData = svg.selectAll("circle")
+
   var homeFlag = $('input[name="homeCheck"]').prop('checked');
   var workFlag = $('input[name="workCheck"]').prop('checked');
 
@@ -264,8 +298,6 @@ function filter() {
     filterWork();
   }
   else {
-    allData = svg.selectAll("circle")
-      .attr("r", "2px");
     filterCatergories(allData);
   }
 }
@@ -285,6 +317,7 @@ function filterHome() {
       else{ return ;}
     });
 
+  //filterTime(homes);
   filterCatergories(homes);
 }
 
@@ -362,9 +395,36 @@ function filterCatergories(dsubset) {
     dsubset.filter(function (d) { return d.Category === "DRUG/NARCOTIC";}) //[6]
     .style("opacity", "0.1");
   }
+}
 
+function filterTime(dsubset) {
+  t1 = $( "#time-slider" ).slider( "values", 0 );
+  t2 = $( "#time-slider" ).slider( "values", 1 );
+  times = dsubset.filter(function(d) {
+    crimeTime = timeStringToFloat(d.Time);
+    if (crimeTime >= t1 && crimeTime <= t2) {
+      return d;
+    }
+    else{
+      return ;
+    }
+  });
+  //filterCatergories(times);
+  times.attr("r","2px")
+  return times;
+}
+
+function timeStringToFloat(time) {
+  var hoursMinutes = time.split(/[.:]/);
+  var hours = parseInt(hoursMinutes[0], 10);
+  var minutes = hoursMinutes[1] ? parseInt(hoursMinutes[1], 10) : 0;
+  return hours + minutes / 60;
+}
+
+function filterDays() {
 
 }
+
 
 
 //variable to hold our home and work elements
