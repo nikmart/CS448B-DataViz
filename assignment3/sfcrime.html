@@ -188,7 +188,6 @@ function mapIt(data) {
   		.append("circle")
   		.attr("cx", function (d) { return projection(d.Location)[0]; })
   		.attr("cy", function (d) { return projection(d.Location)[1]; })
-  		.attr("r", "2px")
   		.attr("fill", pickColor)
       .on("mouseover", function(d){
         tooltip.text(d.Category + ", "
@@ -198,7 +197,9 @@ function mapIt(data) {
 	    .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
 	    .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
       .attr("data-id", function(d){return d.Category;})
-      .style("opacity", .2);
+      .style("opacity","0.2");
+
+  filter();
 
 };
 
@@ -284,49 +285,57 @@ var workFilterDist = 50;
 //var assualtFlag = $('input[name="assaultCheck"]').prop('checked');
 function filter() {
   allData = svg.selectAll("circle")
+    .attr("r", "0px"); //reset visibility of the data
 
+  // 1 filter for time
+  timeFilteredData = filterTime(allData);
+  console.log(timeFilteredData);
+  //timeFilteredData.attr("r","2px")
+
+  // 2 filter for the home or work circles
   var homeFlag = $('input[name="homeCheck"]').prop('checked');
   var workFlag = $('input[name="workCheck"]').prop('checked');
 
   if (homeFlag && workFlag) {
-    filterIntersection();
+    filterIntersection(timeFilteredData);
   }
   else if (homeFlag) {
-    filterHome();
+    filterHome(timeFilteredData);
   }
   else if (workFlag) {
-    filterWork();
+    filterWork(timeFilteredData);
   }
   else {
-    filterCatergories(allData);
+    timeFilteredData.attr("r","2px");
+    filterCatergories(timeFilteredData);
   }
 }
 
-function filterHome() {
+function filterHome(dsubset) {
+  dsubset.attr("r","0px"); //reset the visibility
   // get the value of home and work and convert to lat/long for comparison
   var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
   homeFilterDist = $( "#homeSlider" ).slider( "value" );
-  homes = svg.selectAll("circle")
-    .attr("r", function (d) {
+  homes = dsubset.filter(function (d) {
       var homeDist = d3.geo.distance(homeCoords, d.Location) * earthRad; //compute the distance
       //if the distance is less than 1 mi log it
       if (homeDist <= homeFilterDist) {
         //console.log(dist);
-        return "2px"; //return nothing to clear the circle radius
+        return d; //return nothing to clear the circle radius
       }
       else{ return ;}
     });
 
-  //filterTime(homes);
-  filterCatergories(homes);
+    homes.attr("r", "2px");
+  //filterCatergories(homes);
 }
 
-function filterWork() {
+function filterWork(dsubset) {
+  dsubset.attr("r","0px"); //reset the visibility
   // get the value of home and work and convert to lat/long for comparison
   var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
   workFilterDist = $( "#workSlider" ).slider( "value" );
-  works = svg.selectAll("circle")
-    .attr("r", function (d) {
+  works = dsubset.attr("r", function (d) {
       var workDist = d3.geo.distance(workCoords, d.Location) * earthRad; //compute the distance
       //if the distance is less than 1 mi log it
       if (workDist <= workFilterDist) {
@@ -339,7 +348,8 @@ function filterWork() {
   filterCatergories(works);
 }
 
-function filterIntersection() {
+function filterIntersection(dsubset) {
+  dsubset.attr("r","0px"); //reset the visibility
   // get the value of home and work and convert to lat/long for comparison
   var homeCoords = projection.invert([home.data()[0].x, home.data()[0].y]); //[8]
   var workCoords = projection.invert([work.data()[0].x, work.data()[0].y]); //[8]
@@ -348,8 +358,7 @@ function filterIntersection() {
   workFilterDist = $( "#workSlider" ).slider( "value" );
 
   // show only the intersection of the two circles if home and work are there
-  intersection = svg.selectAll("circle")
-    .attr("r", function (d) {
+  intersection = dsubset.attr("r", function (d) {
       var homeDist = d3.geo.distance(homeCoords, d.Location) * earthRad; //compute the distance
       var workDist = d3.geo.distance(workCoords, d.Location) * earthRad; //compute the distance
       //if the distance is less than 1 mi log it
