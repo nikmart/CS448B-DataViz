@@ -79,7 +79,7 @@
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 //Constants
-var days = {0:"Sunday", 1:"Monday", 2:"Tuesday", 3:"Wednesday", 4:"Thursday", 5:"Friday", 6:"Saturday"};
+var days = {1:"Monday", 2:"Tuesday", 3:"Wednesday", 4:"Thursday", 5:"Friday", 6:"Saturday", 7:"Sunday"};
 //................  jQuery elements for controls ................//
 $(function() {
   // add slider for distance radii [12]
@@ -118,9 +118,9 @@ $(function() {
 
   $("#day-slider").slider({
     range: true,
-    min: 0,
-    max: 6,
-    values: [1,2],
+    min: 1,
+    max: 7,
+    values: [1,7],
     stop: function( event, ui ) {
       filter(); // use on stop to improve interactivity //[14]
     },
@@ -279,8 +279,6 @@ var drag = d3.behavior.drag()
 
 var earthRad = 3959.547; //[10]
 //compute the distance between the points [9]
-var distRad = d3.geo.distance([-122.458220811697, 37.7633123961354],[-122.447596140416, 37.7106886165247]);
-console.log("distance = " + distRad*earthRad);
 
 //set initial distance really high to show all the data
 var homeFilterDist = 50;
@@ -308,7 +306,6 @@ function filter() {
       return;
     }
   });
-  console.log(dayFilteredData);
 
   // 3 filter for the home or work circles
   var homeFlag = $('input[name="homeCheck"]').prop('checked');
@@ -331,9 +328,6 @@ function filter() {
 
 function getDayNumber (dayString) {
   switch (dayString) {
-    case "Sunday":
-      return 0;
-      break;
     case "Monday":
       return 1;
       break;
@@ -351,6 +345,9 @@ function getDayNumber (dayString) {
       break;
     case "Saturday":
       return 6;
+      break;
+    case "Sunday":
+      return 7;
       break;
   }
 }
@@ -371,7 +368,6 @@ function filterHome(dsubset) {
     });
 
     homes.attr("r", "2px");
-  //filterCatergories(homes);
 }
 
 function filterWork(dsubset) {
@@ -383,7 +379,6 @@ function filterWork(dsubset) {
       var workDist = d3.geo.distance(workCoords, d.Location) * earthRad; //compute the distance
       //if the distance is less than 1 mi log it
       if (workDist <= workFilterDist) {
-        //console.log(dist);
         return "2px"; //return nothing to clear the circle radius
       }
       else{ return ;}
@@ -407,7 +402,6 @@ function filterIntersection(dsubset) {
       var workDist = d3.geo.distance(workCoords, d.Location) * earthRad; //compute the distance
       //if the distance is less than 1 mi log it
       if (homeDist <= homeFilterDist && workDist <= workFilterDist) {
-        //console.log(dist);
         return "2px"; //return nothing to clear the circle radius
       }
       else{ return ;}
@@ -462,8 +456,6 @@ function filterTime(dsubset) {
       return ;
     }
   });
-  //filterCatergories(times);
-  //times.attr("r","2px")
   return times;
 }
 
