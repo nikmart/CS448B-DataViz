@@ -70,9 +70,16 @@
   </p>
   <div id="time-slider" style="width:260px; margin:15px;"></div>
 
+  <p>
+  <label for="days">Day of the Week:</label>
+  <input type="text" id="days" readonly style="border:0; font-weight:bold;">
+  </p>
+  <div id="day-slider" style="width:260px; margin:15px;"></div>
+
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
-
+//Constants
+var days = {0:"Sunday", 1:"Monday", 2:"Tuesday", 3:"Wednesday", 4:"Thursday", 5:"Friday", 6:"Saturday"};
 //................  jQuery elements for controls ................//
 $(function() {
   // add slider for distance radii [12]
@@ -108,17 +115,21 @@ $(function() {
     filter();
   });
 
-  $("#date-slider").slider({
+
+  $("#day-slider").slider({
     range: true,
-    min: 1,
-    max: 15,
-    values: [1,15],
+    min: 0,
+    max: 6,
+    values: [1,2],
+    stop: function( event, ui ) {
+      filter(); // use on stop to improve interactivity //[14]
+    },
     slide: function(event, ui){
-      $("#days").val("April " + ui.values[0] + "- " + ui.values[1]);
+      $("#days").val(days[ui.values[0]] + " - " + days[ui.values[1]]);
     }
   })
-  $( "#days" ).val( "April " + $( "#date-slider" ).slider( "values", 0 ) +
-      " - " + $( "#date-slider" ).slider( "values", 1 ) );
+  $( "#days" ).val(days[$( "#day-slider" ).slider( "values", 0 )] +
+      " - " + days[$( "#day-slider" ).slider( "values", 1 )] );
 
   $("#time-slider").slider({
     range: true,
@@ -239,13 +250,6 @@ var pickColor = function (d) {
   }
 }
 
-function showAssault(){
-  console.log("Button clicked!");
-  svg.selectAll("circle")
-    .filter(function (d) { return d.Category === "ASSAULT";}) //[6]
-    .attr("r", "4px");
-  };
-
 
 // Define drag beavior
 var drag = d3.behavior.drag()
@@ -289,25 +293,65 @@ function filter() {
 
   // 1 filter for time
   timeFilteredData = filterTime(allData);
-  console.log(timeFilteredData);
+  //console.log(timeFilteredData);
   //timeFilteredData.attr("r","2px")
 
-  // 2 filter for the home or work circles
+  // 2 Filter for days of the week
+  var d1 = $( "#day-slider" ).slider( "values", 0 );
+  var d2 = $( "#day-slider" ).slider( "values", 1 );
+  dayFilteredData = timeFilteredData.filter(function (d) {
+    dayofweek = getDayNumber(d.DayOfWeek);
+    if (dayofweek >= d1 && dayofweek <= d2) {
+      return d;
+    }
+    else {
+      return;
+    }
+  });
+  console.log(dayFilteredData);
+
+  // 3 filter for the home or work circles
   var homeFlag = $('input[name="homeCheck"]').prop('checked');
   var workFlag = $('input[name="workCheck"]').prop('checked');
 
   if (homeFlag && workFlag) {
-    filterIntersection(timeFilteredData);
+    filterIntersection(dayFilteredData);
   }
   else if (homeFlag) {
-    filterHome(timeFilteredData);
+    filterHome(dayFilteredData);
   }
   else if (workFlag) {
-    filterWork(timeFilteredData);
+    filterWork(dayFilteredData);
   }
   else {
-    timeFilteredData.attr("r","2px");
-    filterCatergories(timeFilteredData);
+    dayFilteredData.attr("r","2px");
+    filterCatergories(dayFilteredData);
+  }
+}
+
+function getDayNumber (dayString) {
+  switch (dayString) {
+    case "Sunday":
+      return 0;
+      break;
+    case "Monday":
+      return 1;
+      break;
+    case "Tuesday":
+      return 2;
+      break;
+    case "Wednesday":
+      return 3;
+      break;
+    case "Thursday":
+      return 4;
+      break;
+    case "Friday":
+      return 5;
+      break;
+    case "Saturday":
+      return 6;
+      break;
   }
 }
 
@@ -419,10 +463,11 @@ function filterTime(dsubset) {
     }
   });
   //filterCatergories(times);
-  times.attr("r","2px")
+  //times.attr("r","2px")
   return times;
 }
 
+// convert string time to float time [15]
 function timeStringToFloat(time) {
   var hoursMinutes = time.split(/[.:]/);
   var hours = parseInt(hoursMinutes[0], 10);
@@ -502,5 +547,6 @@ function addWork() {
   // [13] jQuery checkboxes: https://jqueryui.com/button/#checkbox
                              //http://www.tutorialrepublic.com/faq/how-to-check-a-checkbox-is-checked-or-not-using-jquery.php
   // [14] jQuery slider actions: https://api.jqueryui.com/slider/#event-stop
+  // [15] Convert string times to floats: http://stackoverflow.com/questions/10893613/how-can-i-convert-time-to-decimal-number-in-javascript
 </script>
 </body>
