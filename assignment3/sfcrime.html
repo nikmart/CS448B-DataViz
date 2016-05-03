@@ -15,66 +15,83 @@
   fill: #333;
 }
 
-.chart div {
-  font: 10px sans-serif;
-  background-color: grey;
-  text-align: right;
-  padding: 3px;
-  margin: 1px;
-  color: white;
+#header {
+    background-color:white;
+    color:black;
+    text-align:left;
+    padding:1px;
 }
 
-.home {
-
+#controls {
+    line-height:30px;
+    background-color:#eeeeee;
+    width:300px;
+    height:750px;
+    float:left;
+    padding:5px;
 }
 
-.work {
+h1, h2, h3, h4, h5, h6 {
+  font-family: sans-serif;
+}
 
+p {
+  font-family: sans-serif;
 }
 
 </style>
 <body>
+  <div id="header">
+    <h1> Reported Crime in San Francisco: 1 - 15 APRIL 2016</h1>
+  </div>
+
+<div id="controls">
+  <h2>Data Filters</h2>
+
 
   <p>
-    <label for="homeRadius">Radius from Home:</label>
+    <input type="button" id="addHome" value="Add Home" onClick="addHome()" value="2">
+    <input type="checkbox" name="homeCheck"><label>Enable Home Filter</label>
+    <br>
+    <label for="homeRadius"><b>Miles from home:</b></label>
     <input type="text" id="homeRadius" readonly style="border:0; font-weight:bold;">
   </p>
 
   <div id="homeSlider" style="width:260px; margin:15px;"></div>
 
   <p>
-    <label for="workRadius">Radius from Work:</label>
+    <input type="button" id="addWork" value="Add Work" onClick="addWork()" value="2">
+    <input type="checkbox" name="workCheck"><label>Enable Work Filter</label>
+    <br>
+    <label for="workRadius"><b>Miles from Work:</b></label>
     <input type="text" id="workRadius" readonly style="border:0; font-weight:bold;">
   </p>
 
   <div id="workSlider" style="width:260px; margin:15px;"></div>
 
-  <input type="button" id="addHome" value="Add Home" onClick="addHome()" value="2">
-  <br>
-  <input type="button" id="addWork" value="Add Work" onClick="addWork()" value="2">
-
-  <div id="catergories">
-    <input type="checkbox" id="check1" name="assaultCheck"><label for="check1">ASSAULT</label>
-    <input type="checkbox" id="check2" name="larcenyCheck"><label for="check2">LARCENY</label>
-    <input type="checkbox" id="check3" name="drugCheck"><label for="check3">DRUGS</label>
-  </div>
-
-  <div id="locations">
-    <input type="checkbox" name="homeCheck"><label>Home</label>
-    <input type="checkbox" name="workCheck"><label>Work</label>
-  </div>
+  <p><b><i>Note: If Home and Work are enabled, data is the intersection of the two circles.</i></b></p>
 
   <p>
-  <label for="time">Time:</label>
+  <label for="time"><b>Time of Day:</b></label>
   <input type="text" id="time" readonly style="border:0; font-weight:bold;">
   </p>
   <div id="time-slider" style="width:260px; margin:15px;"></div>
 
   <p>
-  <label for="days">Day of the Week:</label>
+  <label for="days"><b>Day of the Week:</b></label>
   <input type="text" id="days" readonly style="border:0; font-weight:bold;">
   </p>
   <div id="day-slider" style="width:260px; margin:15px;"></div>
+
+  <div id="catergories">
+    <h4>Type of Crime</h4>
+    <input type="checkbox" id="check1" name="assaultCheck"><label for="check1">ASSAULT</label>
+    <input type="checkbox" id="check2" name="larcenyCheck"><label for="check2">LARCENY</label>
+    <input type="checkbox" id="check3" name="drugCheck"><label for="check3">DRUGS</label>
+  </div>
+
+
+</div>
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
@@ -515,9 +532,6 @@ function addWork() {
     })
     .call(drag);
 }
-
-
-
 
 
 // References
