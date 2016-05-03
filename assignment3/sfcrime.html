@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
+  <title>SF Crime Visualization</title>
   <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
   <script src="//code.jquery.com/jquery-1.10.2.js"></script>
   <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
@@ -29,6 +30,11 @@
     height:750px;
     float:left;
     padding:5px;
+}
+
+label {
+    font-family: sans-serif;
+    font-size: 15px
 }
 
 
@@ -96,7 +102,7 @@ h1, h2, h3, h4, h5, h6, a, p {
     <input type="checkbox" id="check9" name="vehicleCheck"><label for="check9">VEHICLE THEFT</label>
   </div>
 
-  <a href="https://github.com/nikmart/CS448B-DataViz/tree/master/assignment3">View Source</a>
+  <a target="_blank" href="https://github.com/nikmart/CS448B-DataViz/tree/master/assignment3">View Source</a>
 
 
 </div>
@@ -205,7 +211,9 @@ var tooltip = d3.select("body")
 	.append("div")
 	.style("position", "absolute")
 	.style("z-index", "10")
-	.style("visibility", "hidden");
+	.style("visibility", "hidden")
+  .style("font-family", "sans-serif")
+  .style("background-color","white");
 
 // loading the json data [2]
 var crimes;
@@ -649,5 +657,6 @@ function addWork() {
   // [16] HTML layouts with CSS: http://www.w3schools.com/html/html_layout.asp
   // [17] jQuery named item: http://stackoverflow.com/questions/1107220/how-can-i-select-an-element-by-name-with-jquery
   // [18] jQuery enable check in checkbox: http://stackoverflow.com/questions/30826769/how-to-disable-checkbox-with-jquery
+  // [19] open link in new tab: http://stackoverflow.com/questions/15551779/open-link-in-new-tab
 </script>
 </body>
