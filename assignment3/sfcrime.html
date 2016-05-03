@@ -31,11 +31,8 @@
     padding:5px;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: sans-serif;
-}
 
-p {
+h1, h2, h3, h4, h5, h6, a, p {
   font-family: sans-serif;
 }
 
@@ -43,7 +40,7 @@ p {
 
 <body>
   <div id="header">
-    <h1> Reported Crime in San Francisco: 1 - 15 APRIL 2016</h1>
+    <h1> Reported Crime in San Francisco: 1 - 15 April 2016</h1>
   </div>
 
 <div id="controls">
@@ -88,10 +85,23 @@ p {
     <input type="checkbox" id="check1" name="assaultCheck"><label for="check1">ASSAULT</label>
     <input type="checkbox" id="check2" name="larcenyCheck"><label for="check2">LARCENY</label>
     <input type="checkbox" id="check3" name="drugCheck"><label for="check3">DRUGS</label>
+    <br>
+    <input type="checkbox" id="check4" name="robberyCheck"><label for="check4">ROBBERY</label>
+    <input type="checkbox" id="check5" name="warrantsCheck"><label for="check5">WARRANTS</label>
+        <input type="checkbox" id="check8" name="weaponsCheck"><label for="check8">WEAPONS</label>
+    <br>
+    <input type="checkbox" id="check6" name="stolenCheck"><label for="check6">STOLEN PROPERTY</label>
+    <input type="checkbox" id="check7" name="vandalismCheck"><label for="check7">VANDALISM</label>
+    <br>
+    <input type="checkbox" id="check9" name="vehicleCheck"><label for="check9">VEHICLE THEFT</label>
   </div>
+
+  <a href="https://github.com/nikmart/CS448B-DataViz/tree/master/assignment3">View Source</a>
 
 
 </div>
+
+
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
@@ -235,30 +245,45 @@ function mapIt(data) {
 var colors = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]); //[6]
 var pickColor = function (d) {
   switch (d.Category) {
-    case "NON-CRIMINAL":
+    case "ROBBERY":
       //console.log(colors(0));
-      return colors(0);
+      return colors(0); //blue
 
       break;
 
     case "LARCENY/THEFT":
-      return colors(8);
+      return colors(1); //orange
 
       break;
 
     case "DRUG/NARCOTIC":
-      return colors(2);
+      return colors(9); //aqua
 
       break;
 
     case "VEHICLE THEFT":
-      return colors(4);
+      return colors(4); //purple
 
       break;
 
     case "ASSAULT":
-      return "red";
-      //return colors(3);
+      return colors(3); //red
+      break;
+
+    case "VANDALISM":
+      return colors(5); //brown
+      break;
+
+    case "WARRANTS":
+      return colors(6); //pink
+      break;
+
+    case "WEAPON LAWS":
+      return colors(2); //green
+      break;
+
+    case "STOLEN PROPERTY":
+      return colors(8); //yellow
       break;
 
     default:
@@ -385,6 +410,7 @@ function filterHome(dsubset) {
     });
 
     homes.attr("r", "2px");
+    filterCatergories(homes);
 }
 
 function filterWork(dsubset) {
@@ -432,6 +458,12 @@ function filterCatergories(dsubset) {
   var assaultFlag = $('input[name="assaultCheck"]').prop('checked');
   var larcenyFlag = $('input[name="larcenyCheck"]').prop('checked');
   var drugFlag = $('input[name="drugCheck"]').prop('checked');
+  var robberyFlag = $('input[name="robberyCheck"]').prop('checked');
+  var vehicleFlag = $('input[name="vehicleCheck"]').prop('checked');
+  var warrantsFlag = $('input[name="warrantsCheck"]').prop('checked');
+  var stolenFlag = $('input[name="stolenCheck"]').prop('checked');
+  var weaponsFlag = $('input[name="weaponsCheck"]').prop('checked');
+  var vandalismFlag = $('input[name="vandalismCheck"]').prop('checked');
 
   if (assaultFlag) {
     dsubset.filter(function (d) { return d.Category === "ASSAULT";}) //[6]
@@ -457,6 +489,60 @@ function filterCatergories(dsubset) {
   }
   else {
     dsubset.filter(function (d) { return d.Category === "DRUG/NARCOTIC";}) //[6]
+    .style("opacity", "0.1");
+  }
+
+  if (robberyFlag) {
+    dsubset.filter(function (d) { return d.Category === "ROBBERY";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    dsubset.filter(function (d) { return d.Category === "ROBBERY";}) //[6]
+    .style("opacity", "0.1");
+  }
+
+  if (vehicleFlag) {
+    dsubset.filter(function (d) { return d.Category === "VEHICLE THEFT";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    dsubset.filter(function (d) { return d.Category === "VEHICLE THEFT";}) //[6]
+    .style("opacity", "0.1");
+  }
+
+  if (warrantsFlag) {
+    dsubset.filter(function (d) { return d.Category === "WARRANTS";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    dsubset.filter(function (d) { return d.Category === "WARRANTS";}) //[6]
+    .style("opacity", "0.1");
+  }
+
+  if (stolenFlag) {
+    dsubset.filter(function (d) { return d.Category === "STOLEN PROPERTY";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    dsubset.filter(function (d) { return d.Category === "STOLEN PROPERTY";}) //[6]
+    .style("opacity", "0.1");
+  }
+
+  if (weaponsFlag) {
+    dsubset.filter(function (d) { return d.Category === "WEAPON LAWS";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    dsubset.filter(function (d) { return d.Category === "WEAPON LAWS";}) //[6]
+    .style("opacity", "0.1");
+  }
+
+  if (vandalismFlag) {
+    dsubset.filter(function (d) { return d.Category === "VANDALISM";}) //[6]
+    .style("opacity", "1");
+  }
+  else {
+    dsubset.filter(function (d) { return d.Category === "VANDALISM";}) //[6]
     .style("opacity", "0.1");
   }
 }
