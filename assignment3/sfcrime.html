@@ -40,6 +40,7 @@ p {
 }
 
 </style>
+
 <body>
   <div id="header">
     <h1> Reported Crime in San Francisco: 1 - 15 APRIL 2016</h1>
@@ -47,7 +48,6 @@ p {
 
 <div id="controls">
   <h2>Data Filters</h2>
-
 
   <p>
     <input type="button" id="addHome" value="Add Home" onClick="addHome()" value="2">
@@ -69,7 +69,7 @@ p {
 
   <div id="workSlider" style="width:260px; margin:15px;"></div>
 
-  <p><b><i>Note: If Home and Work are enabled, data is the intersection of the two circles.</i></b></p>
+  <p><b><i>Note: If Home AND Work are enabled, data is the intersection of the two circles.</i></b></p>
 
   <p>
   <label for="time"><b>Time of Day:</b></label>
@@ -512,6 +512,9 @@ function addHome() {
     })
     .call(drag);
 
+  $("[name='homeCheck']").prop('checked', true); //[17, 18]
+  filter();
+
 }
 
 function addWork() {
@@ -531,6 +534,9 @@ function addWork() {
         return "translate(" + [ d.x, d.y ] + ")"
     })
     .call(drag);
+
+    $("[name='workCheck']").prop('checked', true); //[17, 18]
+    filter();
 }
 
 
@@ -554,5 +560,8 @@ function addWork() {
                              //http://www.tutorialrepublic.com/faq/how-to-check-a-checkbox-is-checked-or-not-using-jquery.php
   // [14] jQuery slider actions: https://api.jqueryui.com/slider/#event-stop
   // [15] Convert string times to floats: http://stackoverflow.com/questions/10893613/how-can-i-convert-time-to-decimal-number-in-javascript
+  // [16] HTML layouts with CSS: http://www.w3schools.com/html/html_layout.asp
+  // [17] jQuery named item: http://stackoverflow.com/questions/1107220/how-can-i-select-an-element-by-name-with-jquery
+  // [18] jQuery enable check in checkbox: http://stackoverflow.com/questions/30826769/how-to-disable-checkbox-with-jquery
 </script>
 </body>
