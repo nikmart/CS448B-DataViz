@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+body {
+  font-family: Helvetica, Arial, sans-serif;
+}
+.reference-line {
+  stroke: #333;
+  shape-rendering: crispEdges;
+  stroke-dasharray: 3;
+}
+.connection-line {
+  stroke: red;
+  stroke-width: 0.5;
+}
+text {
+  font-size: 9px;
+  text-anchor: middle;
+}
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript">
+
+var width = 960,
+    height = 500;
+
+var fmtMonth = d3.time.format("%b");
+
+var today = d3.time.day(new Date(2013, 3, 16)),
+    thisMonth = d3.time.month(today),
+    dates = [
+      {date: d3.time.month.offset(thisMonth, -1)},
+      {date: thisMonth},
+      {name: "-4", date: d3.time.day.offset(today, -4)},
+      {name: "-3", date: d3.time.day.offset(today, -3)},
+      {name: "-2", date: d3.time.day.offset(today, -2)},
+      {name: "-1", date: d3.time.day.offset(today, -1)},
+      {name: "0", date: today},
+      {name: "1", date: d3.time.day.offset(today, 1)},
+      {name: "2", date: d3.time.day.offset(today, 2)},
+      {name: "3", date: d3.time.day.offset(today, 3)},
+      {name: "4", date: d3.time.day.offset(today, 4)},
+      {date: d3.time.month.offset(thisMonth, 1)},
+      {date: d3.time.month.offset(thisMonth, 2)}
+    ],
+    start = dates[0].date,
+    end = dates[dates.length - 1].date;
+
+var vis = d3.select("body").append("svg")
+  .attr("width", width)
+  .attr("height", height);
+
+var lines = vis.append("g"),
+    markers = vis.append("g");
+
+
+// Linear time scale
+
+var linearTimeScale = d3.time.scale()
+  .domain([start, end])
+  .range([20, 940])
+
+// Draw linear time scale
+lines.append("path")
+  .attr("class", "linear reference-line")
+  .attr("d", "M20,50H940");
+
+markers.selectAll(".linear.point")
+  .data(dates)
+.enter().append("circle")
+  .attr({
+    "class": "linear point",
+    r: 3,
+    transform: function(d) { return "translate(" + linearTimeScale(d.date) + ",50)"; }
+  });
+
+markers.selectAll(".linear.label")
+  .data(dates)
+.enter().append("text")
+  .attr({
+    "class": "linear label",
+    transform: function(d) { return "translate(" + linearTimeScale(d.date) + ",40)"; }
+  })
+  .text(function(d) { return d.name || fmtMonth(d.date); });
+
+
+// Polylinear time scale
+
+var n = 4,
+    factor = 10,
+    zoomStart = d3.time.day.offset(today, -2);
+
+// To multiply n days by a factor, create a linear time scale with (factor * n - n) more days in the domain
+var extendedLinearTimeScale = linearTimeScale.copy()
+  .domain([start, d3.time.day.offset(end, factor * n - n)]);
+
+// Use the extended linear scale to determine the correct range values for the polylinear scale
+var polylinearTimeScale = d3.time.scale()
+  .domain([start, zoomStart, d3.time.day.offset(zoomStart, n), end])
+  .range([20, extendedLinearTimeScale(zoomStart), extendedLinearTimeScale(d3.time.day.offset(zoomStart, factor * n)), 940])
+
+// Draw polylinear scale
+lines.append("path")
+  .attr("class", "polylinear reference-line")
+  .attr("d", "M20,100H940");
+
+markers.selectAll(".polylinear.point")
+  .data(dates)
+.enter().append("circle")
+  .attr({
+    "class": "polylinear point",
+    r: 3,
+    transform: function(d) { return "translate(" + polylinearTimeScale(d.date) + ",100)"; }
+  });
+
+markers.selectAll(".polylinear.label")
+  .data(dates)
+.enter().append("text")
+  .attr({
+    "class": "polylinear label",
+    transform: function(d) { return "translate(" + polylinearTimeScale(d.date) + ",115)"; }
+  })
+  .text(function(d) { return d.name || fmtMonth(d.date); });
+
+// Connect the dots
+lines.selectAll(".connection-line")
+  .data(dates)
+.enter().append("path")
+  .attr({
+    "class": "connection-line",
+    d: function(d) { return "M" + linearTimeScale(d.date) + ",50L" + polylinearTimeScale(d.date) + ",100";}
+  });
+</script>
