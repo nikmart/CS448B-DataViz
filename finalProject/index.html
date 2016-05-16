@@ -34,6 +34,11 @@ text {
   stroke: steelblue;
   stroke-width: 1.5px;
 }
+
+.dot {
+  fill: red;
+  opacity: 0.2;
+}
 </style>
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
@@ -41,7 +46,8 @@ text {
 
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 200 - margin.top - margin.bottom,
+    speechheight = 100 - margin.top - margin.bottom;
 
 var formatTime = d3.time.format("%Y-%m-%d %H:%M:%S,%L");
 
@@ -69,13 +75,18 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+var speechsvg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", speechheight + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
 var data1;
 
-// load the JSON data [1]
+// load the speed data [1] for a line graph [2]
 d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
   if (error) return console.warn(error);
 
-  data1 = data;
   x.domain(d3.extent(data, function(d) {return d.time; }));
   y.domain(d3.extent(data, function(d) {return d.speed; }))
 
@@ -98,9 +109,6 @@ d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
       .datum(data)
       .attr("class", "line")
       .attr("d", line);
-
-
-  //visualizeit();
 });
 
 function type(d) {
@@ -109,11 +117,37 @@ function type(d) {
   return d;
 }
 
-function visualizeit(){
-  console.log(formatTime.parse(data[0].time));
+var speechData;
+// create 1-D scatterplot for speech data
+d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
+  if (error) return console.warn(error);
+
+  speechData = data;
+
+  //x.domain(d3.extent(data, function(d) { return d.time; }));
+  y.domain([0,1]);
+  speechsvg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + speechheight + ")")
+      .call(xAxis)
+
+  speechsvg.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", function(d) { return x(d.time); })
+      .attr("cy", speechheight/2);
+});
+
+function typeSpeech(d) {
+  d.time = formatTime.parse(d.time);
+  d.speech = d.speech;
+  return d;
 }
+
 
 // References
 // [1] Loading JSON data: https://github.com/d3/d3/wiki/Requests
-
+// [2] Line graph: https://bl.ocks.org/mbostock/3883245
 </script>
