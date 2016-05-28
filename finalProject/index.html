@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+
+
 <style>
 body {
   font-family: Helvetica, Arial, sans-serif;
@@ -40,11 +42,63 @@ text {
   opacity: 0.2;
 }
 </style>
+
+
+
 <body>
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/-mJIitmwd4U" frameborder="0" allowfullscreen></iframe>
+  <div id="player"></div>
   <br>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script type="text/javascript">
+
+      // 2. This code loads the IFrame Player API code asynchronously.
+      var tag = document.createElement('script');
+
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      // 3. This function creates an <iframe> (and YouTube player)
+      //    after the API code downloads.
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          height: '390',
+          width: '640',
+          videoId: '-mJIitmwd4U',
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      }
+
+      // 4. The API will call this function when the video player is ready.
+      function onPlayerReady(event) {
+        event.target.playVideo();
+      }
+
+      // 5. The API calls this function when the player's state changes.
+      //    The function indicates that when playing a video (state=1),
+      //    the player should play for six seconds and then stop.
+      var done = false;
+      function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.PLAYING && !done) {
+          setTimeout(stopVideo, 6000);
+          setTimeout(printTime, 500);
+          done = true;
+        }
+      }
+
+      function stopVideo() {
+        player.stopVideo();
+      }
+
+      function printTime() {
+        console.log(player.getCurrentTime());
+      }
+
+
 
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
@@ -84,13 +138,15 @@ var speechsvg = d3.select("body").append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 var speedData;
+var startTime;
 
 // load the speed data [1] for a line graph [2]
 d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
   if (error) return console.warn(error);
 
   speedData = data;
-  console.log(data[0].time);
+  startTime = data[0].time;
+  console.log("Start Time: ",startTime);
   x.domain(d3.extent(data, function(d) {return d.time; }));
   y.domain(d3.extent(data, function(d) {return d.speed; }))
 
@@ -143,7 +199,12 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
       .attr("class", "dot")
       .attr("r", 3.5)
       .attr("cx", function(d) { return x(d.time); })
-      .attr("cy", speechheight/2);
+      .attr("cy", speechheight/2)
+      .on("click", function(d) {
+        videoTime = (d.time - startTime)/1000;
+        console.log(videoTime);
+        player.seekTo(videoTime); //go to the time in the video
+      });
 });
 
 function typeSpeech(d) {

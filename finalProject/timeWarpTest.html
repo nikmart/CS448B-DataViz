@@ -110,7 +110,7 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
   // Use the extended linear scale to determine the correct range values for the polylinear scale
   var polylinearTimeScale = d3.time.scale()
     .domain([start, zoomStart, d3.time.minute.offset(zoomStart, n), end])
-    .range([0, 200, 300, width]);
+    .range([0, 50, 200, width]);
 
   var warpaxis = d3.svg.axis()
     .scale(polylinearTimeScale)
