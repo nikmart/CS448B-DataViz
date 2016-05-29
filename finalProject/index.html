@@ -48,6 +48,9 @@ text {
 <body>
   <div id="player"></div>
   <br>
+  <span id="qLabel"> Question: </span>
+  <span id="question"> A question </span>
+  <br>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script type="text/javascript">
 
@@ -137,6 +140,18 @@ var speechsvg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+var warpspeechsvg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", speechheight + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var equalspacespeechsvg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", speechheight + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
 var speedData;
 var startTime;
 
@@ -184,8 +199,6 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
 
   speechData = data;
 
-
-
   //x.domain(d3.extent(data, function(d) { return d.time; }));
   y.domain([0,1]);
   speechsvg.append("g")
@@ -204,7 +217,53 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
         videoTime = (d.time - startTime)/1000;
         console.log(videoTime);
         player.seekTo(videoTime); //go to the time in the video
+
+        // print the questiosn on the screen
+        span = document.getElementById("question");
+        txt = document.createTextNode(d.speech);
+        span.innerText = txt.textContent;
       });
+
+    // Polylinear time scale
+    var n = 3,
+        factor = 10,
+        zoomStart = data[4].time; //sample start point
+        start = data[0].time;
+        end = d3.extent(data, function(d) { return d.time; })[1];
+
+    // Use the extended linear scale to determine the correct range values for the polylinear scale
+    var polylinearTimeScale = d3.time.scale()
+      .domain([start, zoomStart, d3.time.minute.offset(zoomStart, n), end])
+      .range([0, 50, 200, width]);
+
+    var warpaxis = d3.svg.axis()
+      .scale(polylinearTimeScale)
+      .orient("bottom");
+
+    warpspeechsvg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + speechheight + ")")
+        .call(warpaxis);
+
+    warpspeechsvg.selectAll(".dot")
+        .data(data)
+      .enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", 3.5)
+        .attr("cx", function(d) { return polylinearTimeScale(d.time); })
+        .attr("cy", speechheight/2)
+        .on("click", function(d) {
+          videoTime = (d.time - startTime)/1000;
+          console.log(videoTime);
+          player.seekTo(videoTime); //go to the time in the video
+
+          // print the questiosn on the screen
+          span = document.getElementById("question");
+          txt = document.createTextNode(d.speech);
+          span.innerText = txt.textContent;
+        });
+
+     drawEqualSpace(speechData);
 });
 
 function typeSpeech(d) {
@@ -213,6 +272,60 @@ function typeSpeech(d) {
   return d;
 }
 
+function drawEqualSpace (data) {
+
+  numpts = data.length;
+  console.log(numpts);
+
+  step = width/numpts;
+  console.log(step);
+
+  equalscale = d3.range(0,width,step); //[5]
+  console.log(equalscale[equalscale.length-1]);
+
+  console.log(data);
+  timedata = [];
+
+  data.forEach(function (d) {
+    timedata.push(d.time);
+  });
+
+  console.log(timedata);
+
+
+  // Polylinear time scale
+  // Use the extended linear scale to determine the correct range values for the polylinear scale
+  var polylinearTimeScale = d3.time.scale()
+    .domain(timedata)
+    .range(equalscale);
+
+  var warpaxis = d3.svg.axis()
+    .scale(polylinearTimeScale)
+    .orient("bottom");
+
+  equalspacespeechsvg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + speechheight + ")")
+      .call(warpaxis);
+
+  equalspacespeechsvg.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", function(d) { return polylinearTimeScale(d.time); })
+      .attr("cy", speechheight/2)
+      .on("click", function(d) {
+        videoTime = (d.time - startTime)/1000;
+        console.log(videoTime);
+        player.seekTo(videoTime); //go to the time in the video
+
+        // print the questiosn on the screen
+        span = document.getElementById("question");
+        txt = document.createTextNode(d.speech);
+        span.innerText = txt.textContent;
+      });
+}
 
 
 // References
@@ -220,4 +333,5 @@ function typeSpeech(d) {
 // [2] Line graph: https://bl.ocks.org/mbostock/3883245
 // [3] Scatterplot: http://bl.ocks.org/mbostock/3887118
 // [4] Time formatting: https://github.com/d3/d3/wiki/Time-Formatting
+// [5] Arrays in d3, creating arrays
 </script>
