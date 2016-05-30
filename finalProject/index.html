@@ -128,6 +128,8 @@ var line = d3.svg.line()
     .x(function(d) { return x(d.time); })
     .y(function(d) { return y(d.speed); });
 
+var radius = 2; //radius of data dots
+
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -140,13 +142,14 @@ var speechsvg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-var warpspeechsvg = d3.select("body").append("svg")
+var equalspacespeechsvg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", speechheight + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-var equalspacespeechsvg = d3.select("body").append("svg")
+
+var shiftspacespeechsvg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", speechheight + margin.top + margin.bottom)
   .append("g")
@@ -210,13 +213,14 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
       .data(data)
     .enter().append("circle")
       .attr("class", "dot")
-      .attr("r", 3.5)
+      .attr("r", radius)
       .attr("cx", function(d) { return x(d.time); })
       .attr("cy", speechheight/2)
       .on("click", function(d) {
         videoTime = (d.time - startTime)/1000;
         console.log(videoTime);
         player.seekTo(videoTime); //go to the time in the video
+        //player.setPlaybackRate(2);
 
         // print the questiosn on the screen
         span = document.getElementById("question");
@@ -224,46 +228,8 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
         span.innerText = txt.textContent;
       });
 
-    // Polylinear time scale
-    var n = 3,
-        factor = 10,
-        zoomStart = data[4].time; //sample start point
-        start = data[0].time;
-        end = d3.extent(data, function(d) { return d.time; })[1];
-
-    // Use the extended linear scale to determine the correct range values for the polylinear scale
-    var polylinearTimeScale = d3.time.scale()
-      .domain([start, zoomStart, d3.time.minute.offset(zoomStart, n), end])
-      .range([0, 50, 200, width]);
-
-    var warpaxis = d3.svg.axis()
-      .scale(polylinearTimeScale)
-      .orient("bottom");
-
-    warpspeechsvg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + speechheight + ")")
-        .call(warpaxis);
-
-    warpspeechsvg.selectAll(".dot")
-        .data(data)
-      .enter().append("circle")
-        .attr("class", "dot")
-        .attr("r", 3.5)
-        .attr("cx", function(d) { return polylinearTimeScale(d.time); })
-        .attr("cy", speechheight/2)
-        .on("click", function(d) {
-          videoTime = (d.time - startTime)/1000;
-          console.log(videoTime);
-          player.seekTo(videoTime); //go to the time in the video
-
-          // print the questiosn on the screen
-          span = document.getElementById("question");
-          txt = document.createTextNode(d.speech);
-          span.innerText = txt.textContent;
-        });
-
      drawEqualSpace(speechData);
+     drawShiftSpace(speechData);
 });
 
 function typeSpeech(d) {
@@ -312,7 +278,99 @@ function drawEqualSpace (data) {
       .data(data)
     .enter().append("circle")
       .attr("class", "dot")
-      .attr("r", 3.5)
+      .attr("r", radius)
+      .attr("cx", function(d) { return polylinearTimeScale(d.time); })
+      .attr("cy", speechheight/2)
+      .on("click", function(d) {
+        videoTime = (d.time - startTime)/1000;
+        console.log(videoTime);
+        player.seekTo(videoTime); //go to the time in the video
+
+        // print the questiosn on the screen
+        span = document.getElementById("question");
+        txt = document.createTextNode(d.speech);
+        span.innerText = txt.textContent;
+      });
+}
+
+function drawShiftSpace (data) {
+
+  numpts = data.length;
+  console.log(numpts);
+
+  console.log(data);
+  timedata = [data[0].time];
+  shiftscale = [0];
+
+  //start at the second element since we will always place the first
+  // and only go to one before the end so that we only measure distances
+  // forward and backward without errors
+  for (var i = 1; i < data.length - 1; i++) {
+    backtimeDiff = (data[i].time - data[i-1].time)/1000;
+    forwardtimeDiff = (data[i+1].time - data[i].time)/1000;
+    backtimeSpace= (x(data[i].time) - x(data[i-1].time));
+    forwardtimeSpace = (x(data[i+1].time) - x(data[i].time));
+    //console.log(backtimeSpace, forwardtimeSpace);
+
+    // shift the circles around to avoid overlap
+    thres = 3*radius;
+    step = 1.2;
+    // if (backtimeSpace > forwardtimeSpace && forwardtimeSpace > thres) {
+    //   shiftscale.push(x(data[i].time) - backtimeSpace/3);
+    //   console.log(backtimeSpace, forwardtimeSpace, data[i]);
+    // }
+    // // else if (backtimeSpace < forwardtimeSpace && backtimeSpace > thres) {
+    // //   shiftscale.push(x(data[i].time) + forwardtimeSpace/3);
+    // //
+    // // }
+    // else {
+    //   shiftscale.push(x(data[i].time));
+    // }
+
+    // if (backtimeSpace > thres) {
+    //   shiftscale.push(x(data[i].time) - backtimeSpace/step);
+    //   console.log(thres,backtimeSpace, forwardtimeSpace, x(data[i].time),x(data[i].time) - backtimeSpace/step , data[i]);
+    // }
+    // else {
+    //   shiftscale.push(x(data[i].time));
+    // }
+    if (backtimeSpace > radius) {
+      backspace = x(data[i].time) - shiftscale[i-1];
+      shiftscale.push(x(data[i].time) - backspace/2);
+    }
+    else {
+      shiftscale.push(x(data[i].time));
+    }
+
+  }
+
+  data.forEach(function (d) {
+    timedata.push(d.time);
+  });
+
+  console.log(timedata);
+
+
+  // Polylinear time scale
+  // Use the extended linear scale to determine the correct range values for the polylinear scale
+  var polylinearTimeScale = d3.time.scale()
+    .domain(timedata)
+    .range(shiftscale);
+
+  var warpaxis = d3.svg.axis()
+    .scale(polylinearTimeScale)
+    .orient("bottom");
+
+  shiftspacespeechsvg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + speechheight + ")")
+      .call(warpaxis);
+
+  shiftspacespeechsvg.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", radius)
       .attr("cx", function(d) { return polylinearTimeScale(d.time); })
       .attr("cy", speechheight/2)
       .on("click", function(d) {
