@@ -98,7 +98,8 @@ text {
       }
 
       function printTime() {
-        console.log(player.getCurrentTime());
+        //console.log(player.getCurrentTime());
+        setTimeout(printTime, 500);
       }
 
 
@@ -118,7 +119,8 @@ var y = d3.scale.linear()
 
 var xAxis = d3.svg.axis()
     .scale(x)
-    .orient("bottom");
+    .orient("bottom")
+    .ticks(25);
 
 var yAxis = d3.svg.axis()
     .scale(y)
@@ -128,7 +130,7 @@ var line = d3.svg.line()
     .x(function(d) { return x(d.time); })
     .y(function(d) { return y(d.speed); });
 
-var radius = 2; //radius of data dots
+var radius = 3; //radius of data dots
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -155,6 +157,12 @@ var shiftspacespeechsvg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+var fisheyespeechsvg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", speechheight + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
 var speedData;
 var startTime;
 
@@ -171,7 +179,12 @@ d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
   svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + height + ")")
-    .call(xAxis);
+    .call(xAxis)
+    .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(-65)" );
 
   svg.append("g")
     .attr("class", "y axis")
@@ -208,6 +221,11 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
       .attr("class", "x axis")
       .attr("transform", "translate(0," + speechheight + ")")
       .call(xAxis)
+      .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)" );
 
   speechsvg.selectAll(".dot")
       .data(data)
@@ -226,10 +244,21 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
         span = document.getElementById("question");
         txt = document.createTextNode(d.speech);
         span.innerText = txt.textContent;
+      })
+      .on("mouseover", function() {
+        d3.select(this).attr("r", radius*4);
+      })
+      .on("mouseout", function () {
+        d3.select(this).attr("r", radius);
       });
 
      drawEqualSpace(speechData);
      drawShiftSpace(speechData);
+
+
+     shiftscale = [0,width];
+     timedata = [data[0].time, data[data.length-1].time];
+     drawFishEye(speechData, shiftscale, timedata);
 });
 
 function typeSpeech(d) {
@@ -267,12 +296,18 @@ function drawEqualSpace (data) {
 
   var warpaxis = d3.svg.axis()
     .scale(polylinearTimeScale)
-    .orient("bottom");
+    .orient("bottom")
+    .ticks(25);
 
   equalspacespeechsvg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + speechheight + ")")
-      .call(warpaxis);
+      .call(warpaxis)
+      .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)" );
 
   equalspacespeechsvg.selectAll(".dot")
       .data(data)
@@ -299,7 +334,7 @@ function drawShiftSpace (data) {
   console.log(numpts);
 
   console.log(data);
-  timedata = [data[0].time];
+  //timedata = [data[0].time];
   shiftscale = [0];
 
   //start at the second element since we will always place the first
@@ -308,7 +343,8 @@ function drawShiftSpace (data) {
   for (var i = 1; i < data.length - 1; i++) {
     backtimeDiff = (data[i].time - data[i-1].time)/1000;
     forwardtimeDiff = (data[i+1].time - data[i].time)/1000;
-    backtimeSpace= (x(data[i].time) - x(data[i-1].time));
+    //backtimeSpace= (x(data[i].time) - x(data[i-1].time));
+    backtimeSpace= (x(data[i].time) - shiftscale[i-1]);
     forwardtimeSpace = (x(data[i+1].time) - x(data[i].time));
     //console.log(backtimeSpace, forwardtimeSpace);
 
@@ -334,7 +370,7 @@ function drawShiftSpace (data) {
     // else {
     //   shiftscale.push(x(data[i].time));
     // }
-    if (backtimeSpace > radius) {
+    if (backtimeSpace > radius/2) {
       backspace = x(data[i].time) - shiftscale[i-1];
       shiftscale.push(x(data[i].time) - backspace/2);
     }
@@ -359,12 +395,18 @@ function drawShiftSpace (data) {
 
   var warpaxis = d3.svg.axis()
     .scale(polylinearTimeScale)
-    .orient("bottom");
+    .orient("bottom")
+    .ticks(25);
 
   shiftspacespeechsvg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + speechheight + ")")
-      .call(warpaxis);
+      .call(warpaxis)
+      .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)" );
 
   shiftspacespeechsvg.selectAll(".dot")
       .data(data)
@@ -386,10 +428,87 @@ function drawShiftSpace (data) {
 }
 
 
+function drawFishEye (data, shiftscale, timedata) {
+
+  warptimedata = timedata;
+  console.log(warptimedata);
+
+  // Polylinear time scale
+  // Use the extended linear scale to determine the correct range values for the polylinear scale
+  var polylinearTimeScale = d3.time.scale()
+    .domain(warptimedata)
+    .range(shiftscale);
+
+  var warpaxis = d3.svg.axis()
+    .scale(polylinearTimeScale)
+    .orient("bottom")
+    .ticks(25);
+
+  fisheyespeechsvg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + speechheight + ")")
+      .call(warpaxis)
+      .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)" );
+
+  var dot = fisheyespeechsvg.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", radius)
+      .attr("cx", function(d) { return polylinearTimeScale(d.time); })
+      .attr("cy", speechheight/2)
+      .on("click", function(d) {
+        videoTime = (d.time - startTime)/1000;
+        console.log(videoTime);
+        player.seekTo(videoTime); //go to the time in the video
+
+        // print the questiosn on the screen
+        span = document.getElementById("question");
+        txt = document.createTextNode(d.speech);
+        span.innerText = txt.textContent;
+      });
+
+
+
+  fisheyespeechsvg.on("mousemove", function() {
+      var mouse = d3.mouse(this);
+      console.log("mouse-x: ", mouse[0]);
+      mousetime = polylinearTimeScale.invert(mouse[0]);
+      timeoffset = d3.time.minute.offset(mousetime, 2); //2 min ahead of time for warp [6]
+      warptimedata = [data[0].time,mousetime,timeoffset, data[data.length-1].time];
+      shiftscale = [shiftscale[0],mouse[0],mouse[0]+100,shiftscale[shiftscale.length-1]];
+      console.log(warptimedata, shiftscale);
+
+      // Update scale domains
+      polylinearTimeScale.domain(warptimedata).range(shiftscale);
+
+      // Update circles
+      fisheyespeechsvg.selectAll("circle")
+        .transition()
+        .duration(100)
+        //.ease("linear")  // Transition easing - default 'variable' (i.e. has acceleration), also: 'circle', 'elastic', 'bounce', 'linear'
+        .attr("cx", function(d) {
+            return polylinearTimeScale(d.time);  // Circle's X
+        });
+
+        // Update X Axis
+        fisheyespeechsvg.select(".x.axis")
+            .transition()
+            .duration(10)
+            .call(warpaxis);
+    });
+
+}
+
 // References
 // [1] Loading JSON data: https://github.com/d3/d3/wiki/Requests
 // [2] Line graph: https://bl.ocks.org/mbostock/3883245
 // [3] Scatterplot: http://bl.ocks.org/mbostock/3887118
 // [4] Time formatting: https://github.com/d3/d3/wiki/Time-Formatting
 // [5] Arrays in d3, creating arrays
+// [6] Time offset - http://stackoverflow.com/questions/18796291/d3-get-current-time-and-subtract-by-2-hours
 </script>
