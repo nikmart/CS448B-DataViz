@@ -161,7 +161,8 @@ var fisheyespeechsvg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", speechheight + margin.top + margin.bottom)
   .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .attr("class", "");
 
 var speedData;
 var startTime;
@@ -372,7 +373,7 @@ function drawShiftSpace (data) {
     // }
     if (backtimeSpace > radius/2) {
       backspace = x(data[i].time) - shiftscale[i-1];
-      shiftscale.push(x(data[i].time) - backspace/2);
+      shiftscale.push(x(data[i].time) - backspace/1.8);
     }
     else {
       shiftscale.push(x(data[i].time));
@@ -476,12 +477,13 @@ function drawFishEye (data, shiftscale, timedata) {
 
   fisheyespeechsvg.on("mousemove", function() {
       var mouse = d3.mouse(this);
-      console.log("mouse-x: ", mouse[0]);
+      //console.log("mouse-x: ", mouse[0]);
       mousetime = polylinearTimeScale.invert(mouse[0]);
-      timeoffset = d3.time.minute.offset(mousetime, 2); //2 min ahead of time for warp [6]
-      warptimedata = [data[0].time,mousetime,timeoffset, data[data.length-1].time];
-      shiftscale = [shiftscale[0],mouse[0],mouse[0]+100,shiftscale[shiftscale.length-1]];
-      console.log(warptimedata, shiftscale);
+      timeup = d3.time.minute.offset(mousetime, 1); //2 min ahead of time for warp [6]
+      timedown = d3.time.minute.offset(mousetime, -1); //2 min ahead of time for warp [6]
+      warptimedata = [data[0].time, timedown, mousetime, timeup, data[data.length-1].time];
+      shiftscale = [shiftscale[0],mouse[0]-50,mouse[0],mouse[0]+50,shiftscale[shiftscale.length-1]];
+      //console.log(warptimedata, shiftscale);
 
       // Update scale domains
       polylinearTimeScale.domain(warptimedata).range(shiftscale);
@@ -489,7 +491,7 @@ function drawFishEye (data, shiftscale, timedata) {
       // Update circles
       fisheyespeechsvg.selectAll("circle")
         .transition()
-        .duration(100)
+        .duration(10)
         //.ease("linear")  // Transition easing - default 'variable' (i.e. has acceleration), also: 'circle', 'elastic', 'bounce', 'linear'
         .attr("cx", function(d) {
             return polylinearTimeScale(d.time);  // Circle's X
@@ -501,6 +503,30 @@ function drawFishEye (data, shiftscale, timedata) {
             .duration(10)
             .call(warpaxis);
     });
+
+    // fisheyespeechsvg.on("mouseout", function() {
+    //     warptimedata = [data[0].time, data[data.length-1].time];
+    //     shiftscale = [shiftscale[0],shiftscale[shiftscale.length-1]];
+    //     //console.log(warptimedata, shiftscale);
+    //
+    //     // Update scale domains
+    //     polylinearTimeScale.domain(warptimedata).range(shiftscale);
+    //
+    //     // Update circles
+    //     fisheyespeechsvg.selectAll("circle")
+    //       .transition()
+    //       .duration(10)
+    //       //.ease("linear")  // Transition easing - default 'variable' (i.e. has acceleration), also: 'circle', 'elastic', 'bounce', 'linear'
+    //       .attr("cx", function(d) {
+    //           return polylinearTimeScale(d.time);  // Circle's X
+    //       });
+    //
+    //       // Update X Axis
+    //       fisheyespeechsvg.select(".x.axis")
+    //           .transition()
+    //           .duration(10)
+    //           .call(warpaxis);
+    //   });
 
 }
 
