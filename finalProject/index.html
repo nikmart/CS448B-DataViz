@@ -48,6 +48,16 @@ text {
   stroke-width: 2px;
   opacity: 0.5;
 }
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.focus circle {
+  fill: steelblue;
+  stroke: steelblue;
+}
 </style>
 
 
@@ -116,6 +126,7 @@ var margin = {top: 20, right: 20, bottom: 30, left: 50},
     speechheight = 100 - margin.top - margin.bottom;
 
 var formatTime = d3.time.format("%Y-%m-%d %H:%M:%S,%L"); //[4]
+var bisectDate = d3.bisector(function(d) { return d.time; }).left //[7]
 
 var x = d3.time.scale()
     .range([0, width]);
@@ -215,7 +226,47 @@ d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
       .datum(data)
       .attr("class", "line")
       .attr("d", line);
+
+  var focus = svg.append("g")
+      .attr("class", "focus")
+      .style("display", "none");
+
+  focus.append("circle")
+      .attr("r", 3);
+
+  focus.append("text")
+      .attr("x", 11)
+      .attr("dy", ".35em");
+
+  svg.append("rect")
+      .attr("class", "overlay")
+      .attr("width", width)
+      .attr("height", height)
+      .on("mouseover", function() { focus.style("display", null); })
+      .on("mouseout", function() { focus.style("display", "none"); })
+      .on("mousemove", mousemove)
+      .on("click", function() {
+        var x0 = x.invert(d3.mouse(this)[0]),
+            i = bisectDate(data, x0, 1),
+            d0 = data[i - 1],
+            d1 = data[i],
+            d = x0 - d0.time > d1.time - x0 ? d1 : d0;
+        jumpToVideoTime(d)});
+
+  function mousemove() {
+    //console.log(x.invert(d3.mouse(this)[0]));
+    y.domain(d3.extent(data, function(d) {return d.speed; }))
+    var x0 = x.invert(d3.mouse(this)[0]),
+        i = bisectDate(data, x0, 1),
+        d0 = data[i - 1],
+        d1 = data[i],
+        d = x0 - d0.time > d1.time - x0 ? d1 : d0;
+    focus.attr("transform", "translate(" + x(d.time) + "," + y(d.speed) + ")");
+    focus.select("text").text(d.speed);
+  }
+
 });
+
 
 function type(d) {
   d.time = formatTime.parse(d.time);
@@ -580,4 +631,5 @@ function drawFishEye (data, shiftscale, timedata) {
 // [5] Arrays in d3, creating arrays
 // [6] Time offset - http://stackoverflow.com/questions/18796291/d3-get-current-time-and-subtract-by-2-hours
 // [7] speed up youtube video past 2x
+// [8] overlay on mouseover - https://bl.ocks.org/mbostock/3902569
 </script>
