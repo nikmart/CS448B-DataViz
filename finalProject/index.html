@@ -41,6 +41,13 @@ text {
   fill: red;
   opacity: 0.2;
 }
+
+.playhead {
+  fill: none;
+  stroke: dimgray;
+  stroke-width: 2px;
+  opacity: 0.5;
+}
 </style>
 
 
@@ -94,15 +101,14 @@ text {
       }
 
       function stopVideo() {
-        player.stopVideo();
+        player.setPlaybackRate(2);
       }
 
       function printTime() {
         //console.log(player.getCurrentTime());
+        updatePlayhead(player.getCurrentTime());
         setTimeout(printTime, 500);
       }
-
-
 
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
@@ -197,6 +203,14 @@ d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
       .style("text-anchor", "end")
       .text("Speed (mph)");
 
+ // add a playhead before the line
+ svg.append("line")
+   .attr("class", "playhead")
+   .attr("x1", x(startTime))  //<<== change your code here
+   .attr("y1", 0)
+   .attr("x2", x(startTime))  //<<== and here
+   .attr("y2", height)
+
   svg.append("path")
       .datum(data)
       .attr("class", "line")
@@ -228,6 +242,14 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
         .attr("dy", ".15em")
         .attr("transform", "rotate(-65)" );
 
+  //draw the playhead and make sure it is behind the circles
+  speechsvg.append("line")
+    .attr("class", "playhead")
+    .attr("x1", x(startTime))  //<<== change your code here
+    .attr("y1", 10)
+    .attr("x2", x(startTime))  //<<== and here
+    .attr("y2", height - margin.top - margin.bottom - speechheight - 10)
+
   speechsvg.selectAll(".dot")
       .data(data)
     .enter().append("circle")
@@ -236,10 +258,7 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
       .attr("cx", function(d) { return x(d.time); })
       .attr("cy", speechheight/2)
       .on("click", function(d) {
-        videoTime = (d.time - startTime)/1000;
-        console.log(videoTime);
-        player.seekTo(videoTime); //go to the time in the video
-        //player.setPlaybackRate(2);
+        jumpToVideoTime(d);
 
         // print the questiosn on the screen
         span = document.getElementById("question");
@@ -247,26 +266,49 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
         span.innerText = txt.textContent;
       })
       .on("mouseover", function() {
-        d3.select(this).attr("r", radius*4);
+        d3.select(this).attr("r", radius*3)
+        .style("opacity", 0.5);
       })
       .on("mouseout", function () {
-        d3.select(this).attr("r", radius);
+        d3.select(this).attr("r", radius).
+        style("opacity", 0.2);
       });
 
+     //draw the other plots to see what the warping does
      drawEqualSpace(speechData);
      drawShiftSpace(speechData);
-
 
      shiftscale = [0,width];
      timedata = [data[0].time, data[data.length-1].time];
      drawFishEye(speechData, shiftscale, timedata);
 });
 
+function jumpToVideoTime(d) {
+  videoTime = (d.time - startTime)/1000;
+  console.log(videoTime);
+  player.seekTo(videoTime); //go to the time in the video
+  player.setPlaybackRate(1);
+}
+
 function typeSpeech(d) {
   d.time = formatTime.parse(d.time);
   d.speech = d.speech;
   return d;
 }
+
+function updatePlayhead(videoTime) {
+  //console.log(videoTime);
+  playheadTime = d3.time.second.offset(startTime, videoTime);
+  speechsvg.select(".playhead")
+    .attr("class", "playhead")
+    .attr("x1", x(playheadTime))  //<<== change your code here
+    .attr("x2", x(playheadTime))  //<<== and here
+
+  svg.select(".playhead")
+    .attr("class", "playhead")
+    .attr("x1", x(playheadTime))  //<<== change your code here
+    .attr("x2", x(playheadTime))  //<<== and here
+  }
 
 function drawEqualSpace (data) {
 
@@ -537,4 +579,5 @@ function drawFishEye (data, shiftscale, timedata) {
 // [4] Time formatting: https://github.com/d3/d3/wiki/Time-Formatting
 // [5] Arrays in d3, creating arrays
 // [6] Time offset - http://stackoverflow.com/questions/18796291/d3-get-current-time-and-subtract-by-2-hours
+// [7] speed up youtube video past 2x
 </script>
