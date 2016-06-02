@@ -54,15 +54,25 @@ text {
   pointer-events: all;
 }
 
+.underlay {
+  fill: none;
+}
+
 .focus circle {
   fill: steelblue;
   stroke: steelblue;
 }
 
 .highlights {
-  fill: gold;
-  opacity: 0.2;
+  fill: steelblue;
+  opacity: 0.1;
 }
+
+.speechHighlights {
+  fill: red;
+  opacity: 0.1;
+}
+
 </style>
 
 
@@ -172,7 +182,6 @@ var equalspacespeechsvg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-
 var shiftspacespeechsvg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", speechheight + margin.top + margin.bottom)
@@ -188,7 +197,7 @@ var fisheyespeechsvg = d3.select("body").append("svg")
 
 var speedData;
 var startTime;
-
+var highlightlayer;
 // load the speed data [1] for a line graph [2]
 d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
   if (error) return console.warn(error);
@@ -218,6 +227,11 @@ d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
       .attr("dy", ".71em")
       .style("text-anchor", "end")
       .text("Speed (mph)");
+
+
+ // add a highlight layer under the data
+ svg.append("g")
+     .attr("class", "underlay");
 
  // add a playhead before the line
  svg.append("line")
@@ -305,9 +319,9 @@ function filterSpeed (speedFilter) {
 function drawSpeedHighlights(chart) {
   // highlight the speed blocks
   for (var i = 0; i < speedFilterTimes.length; i++) {
-    console.log(speedFilterTimes[i][0]);
+    //console.log(speedFilterTimes[i][0]);
     highlightWidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
-    console.log(highlightWidth);
+    //console.log(highlightWidth);
     chart.append("rect")
       .attr("class", "highlights")
       .attr("x", x(speedFilterTimes[i][0]))
@@ -346,6 +360,18 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
   // draw the speed higlights to match the data
   drawSpeedHighlights(speechsvg);
 
+  // filter the speech data
+  filterSpeech(20);
+  drawSpeechHighlights(speechsvg);
+  // svg.select(".underlay")
+  //   .append("rect")
+  //     .attr("x", 0)
+  //     .attr("y", 0)
+  //     .attr("width", 10)
+  //     .attr("height", height)
+  //     .attr("fill", "red");
+  drawSpeechHighlights(svg.select(".underlay"));
+
   speechsvg.selectAll(".dot")
       .data(data)
     .enter().append("circle")
@@ -381,10 +407,51 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
 
 function jumpToVideoTime(d) {
   videoTime = (d.time - startTime)/1000;
-  console.log(videoTime);
+  //console.log(videoTime);
   player.seekTo(videoTime); //go to the time in the video
   player.setPlaybackRate(1);
 }
+
+// filter the speech based on the density of points and highlight
+// the different areas of the charts
+var speechFilterTimes = [];
+// thres in seconds
+function filterSpeech(thres) {
+  speechFilterFlag = 0;
+  timeBlock = [];
+  for (var i = 0; i < speechData.length-1; i++) {
+    timeDiff = (speechData[i+1].time - speechData[i].time)/1000;
+    if (timeDiff < thres && speechFilterFlag == 0) {
+      timeBlock.push(speechData[i].time);
+      speechFilterFlag = 1;
+    }
+    else if (timeDiff > thres && speechFilterFlag == 1) {
+      timeBlock.push(speechData[i].time);
+      speechFilterTimes.push(timeBlock);
+      speechFilterFlag = 0;
+      timeBlock = [];
+    }
+    //console.log(timeBlock);
+  }
+  //console.log(speechFilterTimes);
+}
+
+// draw speech highlighting
+function drawSpeechHighlights(chart) {
+  // highlight the speed blocks
+  for (var i = 0; i < speechFilterTimes.length; i++) {
+    //console.log(speechFilterTimes[i][0]);
+    highlightWidth = x(speechFilterTimes[i][1]) - x(speechFilterTimes[i][0]);
+    //console.log(highlightWidth);
+    chart.append("rect")
+      .attr("class", "speechHighlights")
+      .attr("x", x(speechFilterTimes[i][0]))
+      .attr("width", highlightWidth)
+      .attr("height", height);
+  }
+}
+
+
 
 function typeSpeech(d) {
   d.time = formatTime.parse(d.time);
@@ -409,22 +476,22 @@ function updatePlayhead(videoTime) {
 function drawEqualSpace (data) {
 
   numpts = data.length;
-  console.log(numpts);
+  //console.log(numpts);
 
   step = width/numpts;
-  console.log(step);
+  //console.log(step);
 
   equalscale = d3.range(0,width,step); //[5]
-  console.log(equalscale[equalscale.length-1]);
+  //console.log(equalscale[equalscale.length-1]);
 
-  console.log(data);
+  //console.log(data);
   timedata = [];
 
   data.forEach(function (d) {
     timedata.push(d.time);
   });
 
-  console.log(timedata);
+  //console.log(timedata);
 
 
   // Polylinear time scale
@@ -450,9 +517,9 @@ function drawEqualSpace (data) {
 
   // draw the speed higlights to match the databut use the warped time
   for (var i = 0; i < speedFilterTimes.length; i++) {
-    console.log(speedFilterTimes[i][0]);
+    //console.log(speedFilterTimes[i][0]);
     highlightWidth = polylinearTimeScale(speedFilterTimes[i][1]) - polylinearTimeScale(speedFilterTimes[i][0]);
-    console.log(highlightWidth);
+    //console.log(highlightWidth);
     equalspacespeechsvg.append("rect")
       .attr("class", "highlights")
       .attr("x", x(speedFilterTimes[i][0]))
@@ -469,7 +536,7 @@ function drawEqualSpace (data) {
       .attr("cy", speechheight/2)
       .on("click", function(d) {
         videoTime = (d.time - startTime)/1000;
-        console.log(videoTime);
+        //console.log(videoTime);
         player.seekTo(videoTime); //go to the time in the video
 
         // print the questiosn on the screen
@@ -482,9 +549,9 @@ function drawEqualSpace (data) {
 function drawShiftSpace (data) {
 
   numpts = data.length;
-  console.log(numpts);
+  //console.log(numpts);
 
-  console.log(data);
+  //console.log(data);
   //timedata = [data[0].time];
   shiftscale = [0];
 
@@ -535,7 +602,7 @@ function drawShiftSpace (data) {
     timedata.push(d.time);
   });
 
-  console.log(timedata);
+  //console.log(timedata);
 
 
   // Polylinear time scale
@@ -568,7 +635,7 @@ function drawShiftSpace (data) {
       .attr("cy", speechheight/2)
       .on("click", function(d) {
         videoTime = (d.time - startTime)/1000;
-        console.log(videoTime);
+        //console.log(videoTime);
         player.seekTo(videoTime); //go to the time in the video
 
         // print the questiosn on the screen
@@ -582,7 +649,7 @@ function drawShiftSpace (data) {
 function drawFishEye (data, shiftscale, timedata) {
 
   warptimedata = timedata;
-  console.log(warptimedata);
+  //console.log(warptimedata);
 
   // Polylinear time scale
   // Use the extended linear scale to determine the correct range values for the polylinear scale
@@ -614,7 +681,7 @@ function drawFishEye (data, shiftscale, timedata) {
       .attr("cy", speechheight/2)
       .on("click", function(d) {
         videoTime = (d.time - startTime)/1000;
-        console.log(videoTime);
+        //console.log(videoTime);
         player.seekTo(videoTime); //go to the time in the video
 
         // print the questiosn on the screen
