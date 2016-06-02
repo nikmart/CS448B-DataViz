@@ -64,11 +64,11 @@ text {
 }
 
 .highlights {
+  fill: steelblue;
 }
 
 .speechHighlights {
   fill: red;
-  opacity: 0.1;
 }
 
 </style>
@@ -81,6 +81,7 @@ text {
   <span id="question"> A question </span>
   <br>
   <input type="checkbox" name="speedCheck"><label>Highlight Speed</label>
+  <input type="checkbox" name="speechCheck"><label>Highlight Speech</label>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 <script type="text/javascript">
@@ -98,6 +99,17 @@ $(function() {
     else {
       clearSpeedHighlights(svg);
       clearSpeedHighlights(speechsvg);
+    }
+
+    //when the speech highlight checked, turn on the highlights
+    if ( $('input[name="speechCheck"]').prop('checked') ) {
+      console.log("show speech highlights");
+      showSpeechHighlights(svg);
+      showSpeechHighlights(speechsvg);
+    }
+    else {
+      clearSpeechHighlights(svg);
+      clearSpeechHighlights(speechsvg);
     }
   });
 
@@ -345,20 +357,20 @@ function drawSpeedHighlights(chart) {
       .attr("class", "highlights")
       .attr("x", x(speedFilterTimes[i][0]))
       .attr("width", highlightWidth)
-      .attr("height", height);
+      .attr("height", height)
+      .attr("opacity", 0);
   }
 }
 
 function showSpeedHighlights(chart) {
   chart.select(".underlay").selectAll(".highlights")
-  .attr("fill", "steelblue")
   .attr("opacity", 0.1);
 }
 
 function clearSpeedHighlights(chart) {
     chart.select(".underlay").selectAll(".highlights")
       .attr("opacity", 0);
-  }
+}
 
 var speechData;
 // create 1-D scatterplot for speech data [3]
@@ -397,7 +409,7 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
   // filter the speech data
   filterSpeech(12);
   drawSpeechHighlights(speechsvg);
-  drawSpeechHighlights(svg.select(".underlay"));
+  drawSpeechHighlights(svg);
 
   speechsvg.selectAll(".dot")
       .data(data)
@@ -466,14 +478,25 @@ function drawSpeechHighlights(chart) {
   // highlight the speed blocks
   for (var i = 0; i < speechFilterTimes.length; i++) {
     highlightWidth = x(speechFilterTimes[i][1]) - x(speechFilterTimes[i][0]);
-    chart.append("rect")
+    chart.select(".underlay")
+    .append("rect")
       .attr("class", "speechHighlights")
       .attr("x", x(speechFilterTimes[i][0]))
       .attr("width", highlightWidth)
-      .attr("height", height);
+      .attr("height", height)
+      .attr("opacity", 0);
   }
 }
 
+function showSpeechHighlights(chart) {
+  chart.select(".underlay").selectAll(".speechHighlights")
+  .attr("opacity", 0.1);
+}
+
+function clearSpeechHighlights(chart) {
+    chart.select(".underlay").selectAll(".speechHighlights")
+      .attr("opacity", 0);
+}
 
 
 function typeSpeech(d) {
