@@ -64,8 +64,6 @@ text {
 }
 
 .highlights {
-  fill: steelblue;
-  opacity: 0.1;
 }
 
 .speechHighlights {
@@ -76,15 +74,35 @@ text {
 </style>
 
 
-
 <body>
   <div id="player"></div>
   <br>
   <span id="qLabel"> Question: </span>
   <span id="question"> A question </span>
   <br>
+  <input type="checkbox" name="speedCheck"><label>Highlight Speed</label>
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 <script type="text/javascript">
+
+//................  jQuery elements for controls ................//
+$(function() {
+
+  $(':checkbox').change(function () {
+    //when speed highlight checked turn on the highlights
+    if ( $('input[name="speedCheck"]').prop('checked') ) {
+      console.log("show speed highlights");
+      showSpeedHighlights(svg);
+      showSpeedHighlights(speechsvg);
+    }
+    else {
+      clearSpeedHighlights(svg);
+      clearSpeedHighlights(speechsvg);
+    }
+  });
+
+});
+//............................................................................//
 
       // 2. This code loads the IFrame Player API code asynchronously.
       var tag = document.createElement('script');
@@ -322,13 +340,25 @@ function drawSpeedHighlights(chart) {
     //console.log(speedFilterTimes[i][0]);
     highlightWidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
     //console.log(highlightWidth);
-    chart.append("rect")
+    chart.select(".underlay")
+    .append("rect")
       .attr("class", "highlights")
       .attr("x", x(speedFilterTimes[i][0]))
       .attr("width", highlightWidth)
       .attr("height", height);
   }
 }
+
+function showSpeedHighlights(chart) {
+  chart.select(".underlay").selectAll(".highlights")
+  .attr("fill", "steelblue")
+  .attr("opacity", 0.1);
+}
+
+function clearSpeedHighlights(chart) {
+    chart.select(".underlay").selectAll(".highlights")
+      .attr("opacity", 0);
+  }
 
 var speechData;
 // create 1-D scatterplot for speech data [3]
@@ -349,6 +379,10 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
         .attr("dy", ".15em")
         .attr("transform", "rotate(-65)" );
 
+  // add a highlight layer under the data
+  speechsvg.append("g")
+      .attr("class", "underlay");
+
   //draw the playhead and make sure it is behind the circles
   speechsvg.append("line")
     .attr("class", "playhead")
@@ -361,15 +395,8 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
   drawSpeedHighlights(speechsvg);
 
   // filter the speech data
-  filterSpeech(20);
+  filterSpeech(12);
   drawSpeechHighlights(speechsvg);
-  // svg.select(".underlay")
-  //   .append("rect")
-  //     .attr("x", 0)
-  //     .attr("y", 0)
-  //     .attr("width", 10)
-  //     .attr("height", height)
-  //     .attr("fill", "red");
   drawSpeechHighlights(svg.select(".underlay"));
 
   speechsvg.selectAll(".dot")
@@ -431,18 +458,14 @@ function filterSpeech(thres) {
       speechFilterFlag = 0;
       timeBlock = [];
     }
-    //console.log(timeBlock);
   }
-  //console.log(speechFilterTimes);
 }
 
 // draw speech highlighting
 function drawSpeechHighlights(chart) {
   // highlight the speed blocks
   for (var i = 0; i < speechFilterTimes.length; i++) {
-    //console.log(speechFilterTimes[i][0]);
     highlightWidth = x(speechFilterTimes[i][1]) - x(speechFilterTimes[i][0]);
-    //console.log(highlightWidth);
     chart.append("rect")
       .attr("class", "speechHighlights")
       .attr("x", x(speechFilterTimes[i][0]))
