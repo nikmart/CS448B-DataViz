@@ -71,6 +71,19 @@ text {
   fill: red;
 }
 
+div.tooltip {
+    position: absolute;
+    text-align: left;
+    width: auto;
+    height: auto;
+    padding: 6px;
+    font: 14px sans-serif;
+    background: lightgrey;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
 </style>
 
 
@@ -81,9 +94,19 @@ text {
   <span id="question"> A question </span>
   <br>
   <input type="checkbox" name="speedCheck"><label>Highlight Speed</label>
+
+  <p>
+  <label for="speed">Speed:</label>
+  <input type="text" id="speed" readonly style="border:0;font-weight:bold;">
+  </p>
+  <div id="slider" name="speedVal" style="width:260px; margin:15px;"></div>
+
   <input type="checkbox" name="speechCheck"><label>Highlight Speech</label>
+  <br>
+<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/base/jquery-ui.css">
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script type="text/javascript">
 
 //................  jQuery elements for controls ................//
@@ -112,6 +135,19 @@ $(function() {
       clearSpeechHighlights(speechsvg);
     }
   });
+
+  $( "#slider" ).slider({
+    value:55,
+    min: 0,
+    max: 100,
+    step: 1,
+    slide: function( event, ui ) {
+        $( "#speed" ).val( ui.value );
+        filterSpeed(ui.value);
+        drawSpeedHighlights(svg);
+      }
+  });
+    $( "#speed" ).val($( "#slider" ).slider( "value" ) );
 
 });
 //............................................................................//
@@ -225,6 +261,11 @@ var fisheyespeechsvg = d3.select("body").append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
     .attr("class", "");
 
+// Define the div for the tooltip [9]
+var div = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
 var speedData;
 var startTime;
 var highlightlayer;
@@ -329,6 +370,8 @@ function type(d) {
 //filter the data based ont the speed so we can reuse this fo other views
 var speedFilterTimes = [];
 function filterSpeed (speedFilter) {
+  //reset the speedFilterTimes so we don't accumulate
+  speedFilterTimes = [];
   var speedFilterFlag = 0;
   var timeBlock = [];
   //Highlight the data based on a speed parameter
@@ -348,18 +391,45 @@ function filterSpeed (speedFilter) {
 
 function drawSpeedHighlights(chart) {
   // highlight the speed blocks
-  for (var i = 0; i < speedFilterTimes.length; i++) {
-    //console.log(speedFilterTimes[i][0]);
-    highlightWidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
-    //console.log(highlightWidth);
-    chart.select(".underlay")
-    .append("rect")
-      .attr("class", "highlights")
-      .attr("x", x(speedFilterTimes[i][0]))
-      .attr("width", highlightWidth)
-      .attr("height", height)
-      .attr("opacity", 0);
-  }
+  // for (var i = 0; i < speedFilterTimes.length; i++) {
+  //   //console.log(speedFilterTimes[i][0]);
+  //   highlightWidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
+  //   //console.log(highlightWidth);
+  //   chart.select(".underlay")
+  //   .append("rect")
+  //     .attr("class", "highlights")
+  //     .attr("x", x(speedFilterTimes[i][0]))
+  //     .attr("width", x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]))
+  //     .attr("height", height)
+  //     .attr("opacity", 0);
+  // }
+
+  // fast updating of the highlights
+  var speedHighlights = chart.select(".underlay").selectAll("rect")
+    .data(speedFilterTimes);
+
+  speedHighlights.enter().append("rect")
+    .attr("class", "highlights")
+    .attr("x", function (d, i){
+      return x(speedFilterTimes[i][0]);
+    })
+    .attr("width", function (d, i) {
+      highlightwidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
+      return highlightwidth;
+    })
+    .attr("height", height)
+    .attr("fill", "steelblue")
+    .attr("opacity", 0.1);
+
+    speedHighlights.attr("x", function (d, i){
+      return x(speedFilterTimes[i][0]);
+      })
+    .attr("width", function (d, i) {
+      highlightwidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
+      return highlightwidth;
+    });
+
+    speedHighlights.exit().remove();
 }
 
 function showSpeedHighlights(chart) {
@@ -426,13 +496,24 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
         txt = document.createTextNode(d.speech);
         span.innerText = txt.textContent;
       })
-      .on("mouseover", function() {
+      .on("mouseover", function(d) {
         d3.select(this).attr("r", radius*3)
         .style("opacity", 0.5);
+
+        div.transition()
+            .duration(200)
+            .style("opacity", .9);
+        div	.html(d.speech)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 38) + "px");
       })
       .on("mouseout", function () {
-        d3.select(this).attr("r", radius).
-        style("opacity", 0.2);
+        d3.select(this).attr("r", radius)
+        .style("opacity", 0.2);
+
+        div.transition()
+          .duration(500)
+          .style("opacity", 0);
       });
 
      //draw the other plots to see what the warping does
@@ -442,6 +523,8 @@ d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
      shiftscale = [0,width];
      timedata = [data[0].time, data[data.length-1].time];
      drawFishEye(speechData, shiftscale, timedata);
+
+
 });
 
 function jumpToVideoTime(d) {
@@ -802,4 +885,5 @@ function drawFishEye (data, shiftscale, timedata) {
 // [6] Time offset - http://stackoverflow.com/questions/18796291/d3-get-current-time-and-subtract-by-2-hours
 // [7] speed up youtube video past 2x
 // [8] overlay on mouseover - https://bl.ocks.org/mbostock/3902569
+// [9] tooltips - http://bl.ocks.org/d3noob/a22c42db65eb00d4e369
 </script>
