@@ -297,7 +297,7 @@ var speedData;
 var startTime;
 var highlightlayer;
 // load the speed data [1] for a line graph [2]
-d3.tsv("/data/P3D3_speed.tsv", type, function(error, data){
+d3.tsv("data/P3D3_speed.tsv", type, function(error, data){
   if (error) return console.warn(error);
 
   speedData = data;
@@ -468,7 +468,7 @@ function clearSpeedHighlights(chart) {
 
 var speechData;
 // create 1-D scatterplot for speech data [3]
-d3.tsv("/data/P3D3_speech.tsv", typeSpeech, function(error, data){
+d3.tsv("data/P3D3_speech.tsv", typeSpeech, function(error, data){
   if (error) return console.warn(error);
 
   speechData = data;
