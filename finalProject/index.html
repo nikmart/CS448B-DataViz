@@ -142,348 +142,182 @@ div.tooltip {
 <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script type="text/javascript">
 
-//................  jQuery elements for controls ................//
-$(function() {
 
-  $(':checkbox').prop('checked', true);
-  $(':checkbox').change(function () {
-    //when speed highlight checked turn on the highlights
-    if ( $('input[name="speedCheck"]').prop('checked') ) {
-      console.log("show speed highlights");
-      showSpeedHighlights(svg);
-      showSpeedHighlights(speechsvg);
-    }
-    else {
-      clearSpeedHighlights(svg);
-      clearSpeedHighlights(speechsvg);
-    }
+// 2. This code loads the IFrame Player API code asynchronously.
+var tag = document.createElement('script');
 
-    //when the speech highlight checked, turn on the highlights
-    if ( $('input[name="speechCheck"]').prop('checked') ) {
-      console.log("show speech highlights");
-      showSpeechHighlights(svg);
-      showSpeechHighlights(speechsvg);
-    }
-    else {
-      clearSpeechHighlights(svg);
-      clearSpeechHighlights(speechsvg);
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+// 3. This function creates an <iframe> (and YouTube player)
+//    after the API code downloads.
+var player;
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('player', {
+    height: '540',
+    width: '960',
+    videoId: '-mJIitmwd4U',
+    events: {
+      'onReady': onPlayerReady,
+      'onStateChange': onPlayerStateChange
     }
   });
-
-  // speed filter slider
-  $( "#slider" ).slider({
-    value:55,
-    min: 0,
-    max: 100,
-    step: 1,
-    slide: function( event, ui ) {
-        $( "#speed" ).val( ui.value + "mph" );
-        filterSpeed(ui.value);
-        drawSpeedHighlights(svg);
-        drawSpeedHighlights(speechsvg);
-      }
-  });
-  $( "#speed" ).val($( "#slider" ).slider( "value" ) + "mph");
-
-  // speech filter slider
-  $( "#timeQslider" ).slider({
-    value:12,
-    min: 0,
-    max: 120,
-    step: 1,
-    slide: function( event, ui ) {
-        $( "#timeQ" ).val( ui.value + "s" );
-        filterSpeech(ui.value);
-        drawSpeechHighlights(svg);
-        drawSpeechHighlights(speechsvg);
-      }
-  });
-  $( "#timeQ" ).val($( "#timeQslider" ).slider( "value" ) + "s" );
-
-});
-//............................................................................//
-
-      // 2. This code loads the IFrame Player API code asynchronously.
-      var tag = document.createElement('script');
-
-      tag.src = "https://www.youtube.com/iframe_api";
-      var firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-      // 3. This function creates an <iframe> (and YouTube player)
-      //    after the API code downloads.
-      var player;
-      function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-          height: '540',
-          width: '960',
-          videoId: '-mJIitmwd4U',
-          events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
-          }
-        });
-      }
-
-      // 4. The API will call this function when the video player is ready.
-      function onPlayerReady(event) {
-        event.target.playVideo();
-      }
-
-      // 5. The API calls this function when the player's state changes.
-      //    The function indicates that when playing a video (state=1),
-      //    the player should play for six seconds and then stop.
-      var done = false;
-      function onPlayerStateChange(event) {
-        if (event.data == YT.PlayerState.PLAYING && !done) {
-          setTimeout(stopVideo, 6000);
-          setTimeout(printTime, 500);
-          done = true;
-        }
-      }
-
-      function stopVideo() {
-        player.setPlaybackRate(2);
-      }
-
-      function printTime() {
-        //console.log(player.getCurrentTime());
-        updatePlayhead(player.getCurrentTime());
-        markSpeechDot(player.getCurrentTime());
-        setTimeout(printTime, 500);
-      }
-
-var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 960 - margin.left - margin.right,
-    height = 200 - margin.top - margin.bottom,
-    speechheight = 100 - margin.top - margin.bottom;
-
-var formatTime = d3.time.format("%Y-%m-%d %H:%M:%S,%L"); //[4]
-var bisectDate = d3.bisector(function(d) { return d.time; }).left //[7]
-
-var x = d3.time.scale()
-    .range([0, width]);
-
-var y = d3.scale.linear()
-    .range([height, 0]);
-
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom")
-    .ticks(25);
-
-var yAxis = d3.svg.axis()
-    .scale(y)
-    .orient("left");
-
-var line = d3.svg.line()
-    .x(function(d) { return x(d.time); })
-    .y(function(d) { return y(d.speed); });
-
-var radius = 3; //radius of data dots
-
-var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-var speechsvg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", speechheight + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-// Define the div for the tooltip [9]
-var div = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
-
-var speedData;
-var startTime;
-var highlightlayer;
-// load the speed data [1] for a line graph [2]
-d3.tsv("data/P3D3_speed.tsv", type, function(error, data){
-  if (error) return console.warn(error);
-
-  speedData = data;
-  startTime = data[0].time;
-  console.log("Start Time: ",startTime);
-  x.domain(d3.extent(data, function(d) {return d.time; }));
-  y.domain(d3.extent(data, function(d) {return d.speed; }))
-
-  svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis)
-    .selectAll("text")
-      .style("text-anchor", "end")
-      .attr("dx", "-.8em")
-      .attr("dy", ".15em")
-      .attr("transform", "rotate(-65)" );
-
-  svg.append("g")
-    .attr("class", "y axis")
-      .call(yAxis)
-    .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", ".71em")
-      .style("text-anchor", "end")
-      .text("Speed (mph)");
-
-
- // add a speed highlight layer under the data
- svg.append("g")
-     .attr("class", "speedunderlay");
-
- // add a speech highlight layer under the data
- svg.append("g")
-     .attr("class", "speechunderlay");
-
- // add a playhead before the line
- svg.append("line")
-   .attr("class", "playhead")
-   .attr("x1", x(startTime))  //<<== change your code here
-   .attr("y1", 0)
-   .attr("x2", x(startTime))  //<<== and here
-   .attr("y2", height)
-
- //add the speed highlight before the data so it is under the overlay
- filterSpeed(55);
- drawSpeedHighlights(svg);
-
-  svg.append("path")
-      .datum(data)
-      .attr("class", "line")
-      .attr("d", line);
-
-  var focus = svg.append("g")
-      .attr("class", "focus")
-      .style("display", "none");
-
-  focus.append("circle")
-      .attr("r", 3);
-
-  focus.append("text")
-      .attr("x", 11)
-      .attr("dy", ".35em");
-
-  svg.append("rect")
-      .attr("class", "overlay")
-      .attr("width", width)
-      .attr("height", height)
-      .on("mouseover", function() { focus.style("display", null); })
-      .on("mouseout", function() { focus.style("display", "none"); })
-      .on("mousemove", mousemove)
-      .on("click", function() {
-        var x0 = x.invert(d3.mouse(this)[0]),
-            i = bisectDate(data, x0, 1),
-            d0 = data[i - 1],
-            d1 = data[i],
-            d = x0 - d0.time > d1.time - x0 ? d1 : d0;
-        jumpToVideoTime(d)});
-
-  function mousemove() {
-    //console.log(x.invert(d3.mouse(this)[0]));
-    y.domain(d3.extent(data, function(d) {return d.speed; }))
-    var x0 = x.invert(d3.mouse(this)[0]),
-        i = bisectDate(data, x0, 1),
-        d0 = data[i - 1],
-        d1 = data[i],
-        d = x0 - d0.time > d1.time - x0 ? d1 : d0;
-    focus.attr("transform", "translate(" + x(d.time) + "," + y(d.speed) + ")");
-    focus.select("text").text(d.speed);
-  }
-
-});
-
-function type(d) {
-  d.time = formatTime.parse(d.time);
-  d.speed = +d.speed;
-  return d;
 }
 
-//filter the data based ont the speed so we can reuse this fo other views
-var speedFilterTimes = [];
-function filterSpeed (speedFilter) {
-  //reset the speedFilterTimes so we don't accumulate
-  speedFilterTimes = [];
-  var speedFilterFlag = 0;
-  var timeBlock = [];
-  //Highlight the data based on a speed parameter
-  for (var i = 0; i < speedData.length; i++) {
-    if (speedData[i].speed >= speedFilter && speedFilterFlag == 0) {
-      timeBlock.push(speedData[i].time);
-      speedFilterFlag = 1;
-    }
-    else if (speedData[i].speed <= speedFilter && speedFilterFlag == 1) {
-      timeBlock.push(speedData[i].time);
-      speedFilterFlag = 0;
-      speedFilterTimes.push(timeBlock);
-      timeBlock = [];
-    }
+// 4. The API will call this function when the video player is ready.
+function onPlayerReady(event) {
+  visualizeIt();
+  event.target.playVideo();
+}
+
+// 5. The API calls this function when the player's state changes.
+//    The function indicates that when playing a video (state=1),
+//    the player should play for six seconds and then stop.
+var done = false;
+function onPlayerStateChange(event) {
+  if (event.data == YT.PlayerState.PLAYING && !done) {
+    setTimeout(stopVideo, 6000);
+    setTimeout(printTime, 500);
+    done = true;
   }
 }
 
-function drawSpeedHighlights(chart) {
-  // fast updating of the highlights
-  var speedHighlights = chart.select(".speedunderlay").selectAll("rect")
-    .data(speedFilterTimes);
+function stopVideo() {
 
-  speedHighlights.enter().append("rect")
-    .attr("class", "highlights")
-    .attr("x", function (d, i){
-      return x(speedFilterTimes[i][0]);
-    })
-    .attr("width", function (d, i) {
-      highlightwidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
-      return highlightwidth;
-    })
-    .attr("height", height)
-    .attr("fill", "steelblue")
-    .attr("opacity", function() {
-      if ($("#speedCheck").prop('checked')) {
-        return 0.1;
+}
+
+function printTime() {
+  //console.log(player.getCurrentTime());
+  updatePlayhead(player.getCurrentTime());
+  markSpeechDot(player.getCurrentTime());
+  setTimeout(printTime, 500);
+}
+
+function visualizeIt(){
+
+  //................  jQuery elements for controls ................//
+  $(function() {
+
+    $(':checkbox').prop('checked', true);
+    $(':checkbox').change(function () {
+      //when speed highlight checked turn on the highlights
+      if ( $('input[name="speedCheck"]').prop('checked') ) {
+        console.log("show speed highlights");
+        showSpeedHighlights(svg);
+        showSpeedHighlights(speechsvg);
       }
       else {
-        return 0;
+        clearSpeedHighlights(svg);
+        clearSpeedHighlights(speechsvg);
+      }
+
+      //when the speech highlight checked, turn on the highlights
+      if ( $('input[name="speechCheck"]').prop('checked') ) {
+        console.log("show speech highlights");
+        showSpeechHighlights(svg);
+        showSpeechHighlights(speechsvg);
+      }
+      else {
+        clearSpeechHighlights(svg);
+        clearSpeechHighlights(speechsvg);
       }
     });
 
-  speedHighlights.attr("x", function (d, i){
-    return x(speedFilterTimes[i][0]);
-    })
-  .attr("width", function (d, i) {
-    highlightwidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
-    return highlightwidth;
+    // speed filter slider
+    $( "#slider" ).slider({
+      value:55,
+      min: 0,
+      max: 100,
+      step: 1,
+      slide: function( event, ui ) {
+          $( "#speed" ).val( ui.value + "mph" );
+          filterSpeed(ui.value);
+          drawSpeedHighlights(svg);
+          drawSpeedHighlights(speechsvg);
+        }
+    });
+    $( "#speed" ).val($( "#slider" ).slider( "value" ) + "mph");
+
+    // speech filter slider
+    $( "#timeQslider" ).slider({
+      value:12,
+      min: 0,
+      max: 120,
+      step: 1,
+      slide: function( event, ui ) {
+          $( "#timeQ" ).val( ui.value + "s" );
+          filterSpeech(ui.value);
+          drawSpeechHighlights(svg);
+          drawSpeechHighlights(speechsvg);
+        }
+    });
+    $( "#timeQ" ).val($( "#timeQslider" ).slider( "value" ) + "s" );
+
   });
+  //............................................................................//
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+      width = 960 - margin.left - margin.right,
+      height = 200 - margin.top - margin.bottom,
+      speechheight = 100 - margin.top - margin.bottom;
 
-  speedHighlights.exit().remove();
-}
+  var formatTime = d3.time.format("%Y-%m-%d %H:%M:%S,%L"); //[4]
+  var bisectDate = d3.bisector(function(d) { return d.time; }).left //[7]
 
-function showSpeedHighlights(chart) {
-  chart.select(".speedunderlay").selectAll("rect")
-  .attr("opacity", 0.1);
-}
+  var x = d3.time.scale()
+      .range([0, width]);
 
-function clearSpeedHighlights(chart) {
-    chart.select(".speedunderlay").selectAll("rect")
-      .attr("opacity", 0);
-}
+  var y = d3.scale.linear()
+      .range([height, 0]);
 
-var speechData;
-// create 1-D scatterplot for speech data [3]
-d3.tsv("data/P3D3_speech.tsv", typeSpeech, function(error, data){
-  if (error) return console.warn(error);
+  var xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom")
+      .ticks(25);
 
-  speechData = data;
+  var yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left");
 
-  //x.domain(d3.extent(data, function(d) { return d.time; }));
-  y.domain([0,1]);
-  speechsvg.append("g")
+  var line = d3.svg.line()
+      .x(function(d) { return x(d.time); })
+      .y(function(d) { return y(d.speed); });
+
+  var radius = 3; //radius of data dots
+
+  var svg = d3.select("body").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var speechsvg = d3.select("body").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", speechheight + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // Define the div for the tooltip [9]
+  var div = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+
+  var speedData;
+  var startTime;
+  var highlightlayer;
+  // load the speed data [1] for a line graph [2]
+  d3.tsv("data/P3D3_speed.tsv", type, function(error, data){
+    if (error) return console.warn(error);
+
+    speedData = data;
+    startTime = data[0].time;
+    console.log("Start Time: ",startTime);
+    x.domain(d3.extent(data, function(d) {return d.time; }));
+    y.domain(d3.extent(data, function(d) {return d.speed; }))
+
+    svg.append("g")
       .attr("class", "x axis")
-      .attr("transform", "translate(0," + speechheight + ")")
+      .attr("transform", "translate(0," + height + ")")
       .call(xAxis)
       .selectAll("text")
         .style("text-anchor", "end")
@@ -491,175 +325,344 @@ d3.tsv("data/P3D3_speech.tsv", typeSpeech, function(error, data){
         .attr("dy", ".15em")
         .attr("transform", "rotate(-65)" );
 
-  // add a highlight layer under the data
-  speechsvg.append("g")
-      .attr("class", "speedunderlay");
+    svg.append("g")
+      .attr("class", "y axis")
+        .call(yAxis)
+      .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text("Speed (mph)");
 
-  // add a speech highlight layer under the data
-  speechsvg.append("g")
-      .attr("class", "speechunderlay");
 
-  //draw the playhead and make sure it is behind the circles
-  speechsvg.append("line")
-    .attr("class", "playhead")
-    .attr("x1", x(startTime))  //<<== change your code here
-    .attr("y1", 10)
-    .attr("x2", x(startTime))  //<<== and here
-    .attr("y2", height - margin.top - margin.bottom - speechheight - 10)
+   // add a speed highlight layer under the data
+   svg.append("g")
+       .attr("class", "speedunderlay");
 
-  // draw the speed higlights to match the data
-  drawSpeedHighlights(speechsvg);
+   // add a speech highlight layer under the data
+   svg.append("g")
+       .attr("class", "speechunderlay");
 
-  // filter the speech data
-  filterSpeech(12);
-  drawSpeechHighlights(speechsvg);
-  drawSpeechHighlights(svg);
+   // add a playhead before the line
+   svg.append("line")
+     .attr("class", "playhead")
+     .attr("x1", x(startTime))  //<<== change your code here
+     .attr("y1", 0)
+     .attr("x2", x(startTime))  //<<== and here
+     .attr("y2", height)
 
-  speechsvg.selectAll(".dot")
-      .data(data)
-    .enter().append("circle")
-      .attr("class", "dot")
-      .attr("r", radius)
-      .attr("cx", function(d) { return x(d.time); })
-      .attr("cy", speechheight/2)
-      .on("click", function(d) {
-        jumpToVideoTime(d);
+   //add the speed highlight before the data so it is under the overlay
+   filterSpeed(55);
+   drawSpeedHighlights(svg);
 
-        // print the questiosn on the screen
-        span = document.getElementById("question");
-        txt = document.createTextNode(d.speech);
-        span.innerText = txt.textContent;
-      })
-      .on("mouseover", function(d) {
-        d3.select(this).attr("r", radius*3)
-        .style("opacity", 0.5);
+    svg.append("path")
+        .datum(data)
+        .attr("class", "line")
+        .attr("d", line);
 
-        div.transition()
-            .duration(200)
-            .style("opacity", .9);
-        div	.html(d.speech)
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 38) + "px");
-      })
-      .on("mouseout", function () {
-        d3.select(this).attr("r", radius)
-        .style("opacity", 0.2);
+    var focus = svg.append("g")
+        .attr("class", "focus")
+        .style("display", "none");
 
-        div.transition()
-          .duration(500)
-          .style("opacity", 0);
-      });
+    focus.append("circle")
+        .attr("r", 3);
 
-});
+    focus.append("text")
+        .attr("x", 11)
+        .attr("dy", ".35em");
 
-function jumpToVideoTime(d) {
-  videoTime = (d.time - startTime)/1000;
-  //console.log(videoTime);
-  player.seekTo(videoTime); //go to the time in the video
-  player.setPlaybackRate(1);
-}
+    svg.append("rect")
+        .attr("class", "overlay")
+        .attr("width", width)
+        .attr("height", height)
+        .on("mouseover", function() { focus.style("display", null); })
+        .on("mouseout", function() { focus.style("display", "none"); })
+        .on("mousemove", mousemove)
+        .on("click", function() {
+          var x0 = x.invert(d3.mouse(this)[0]),
+              i = bisectDate(data, x0, 1),
+              d0 = data[i - 1],
+              d1 = data[i],
+              d = x0 - d0.time > d1.time - x0 ? d1 : d0;
+          jumpToVideoTime(d)});
 
-// filter the speech based on the density of points and highlight
-// the different areas of the charts
-var speechFilterTimes = [];
-// thres in seconds
-function filterSpeech(thres) {
-  speechFilterTimes = [];
-  timeBlock = [];
-  for (var i = 0; i < speechData.length-1; i++) {
-    timeDiff = (speechData[i+1].time - speechData[i].time)/1000;
-    if (timeDiff <= thres) {
-      timeBlock.push(speechData[i].time);
-      timeBlock.push(speechData[i+1].time);
-      speechFilterTimes.push(timeBlock);
-      timeBlock = [];
+    function mousemove() {
+      //console.log(x.invert(d3.mouse(this)[0]));
+      y.domain(d3.extent(data, function(d) {return d.speed; }))
+      var x0 = x.invert(d3.mouse(this)[0]),
+          i = bisectDate(data, x0, 1),
+          d0 = data[i - 1],
+          d1 = data[i],
+          d = x0 - d0.time > d1.time - x0 ? d1 : d0;
+      focus.attr("transform", "translate(" + x(d.time) + "," + y(d.speed) + ")");
+      focus.select("text").text(d.speed);
+    }
+
+  });
+
+  function type(d) {
+    d.time = formatTime.parse(d.time);
+    d.speed = +d.speed;
+    return d;
+  }
+
+  //filter the data based ont the speed so we can reuse this fo other views
+  var speedFilterTimes = [];
+  function filterSpeed (speedFilter) {
+    //reset the speedFilterTimes so we don't accumulate
+    speedFilterTimes = [];
+    var speedFilterFlag = 0;
+    var timeBlock = [];
+    //Highlight the data based on a speed parameter
+    for (var i = 0; i < speedData.length; i++) {
+      if (speedData[i].speed >= speedFilter && speedFilterFlag == 0) {
+        timeBlock.push(speedData[i].time);
+        speedFilterFlag = 1;
+      }
+      else if (speedData[i].speed <= speedFilter && speedFilterFlag == 1) {
+        timeBlock.push(speedData[i].time);
+        speedFilterFlag = 0;
+        speedFilterTimes.push(timeBlock);
+        timeBlock = [];
+      }
     }
   }
-}
 
-// draw speech highlighting
-function drawSpeechHighlights(chart) {
-  // fast updating of the highlights
-  var speechHighlights = chart.select(".speechunderlay").selectAll("rect")
-    .data(speechFilterTimes);
+  function drawSpeedHighlights(chart) {
+    // fast updating of the highlights
+    var speedHighlights = chart.select(".speedunderlay").selectAll("rect")
+      .data(speedFilterTimes);
 
-  speechHighlights.enter().append("rect")
-    .attr("class", "speechHighlights")
-    .attr("x", function (d, i){
+    speedHighlights.enter().append("rect")
+      .attr("class", "highlights")
+      .attr("x", function (d, i){
+        return x(speedFilterTimes[i][0]);
+      })
+      .attr("width", function (d, i) {
+        highlightwidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
+        return highlightwidth;
+      })
+      .attr("height", height)
+      .attr("fill", "steelblue")
+      .attr("opacity", function() {
+        if ($("#speedCheck").prop('checked')) {
+          return 0.1;
+        }
+        else {
+          return 0;
+        }
+      });
+
+    speedHighlights.attr("x", function (d, i){
+      return x(speedFilterTimes[i][0]);
+      })
+    .attr("width", function (d, i) {
+      highlightwidth = x(speedFilterTimes[i][1]) - x(speedFilterTimes[i][0]);
+      return highlightwidth;
+    });
+
+    speedHighlights.exit().remove();
+  }
+
+  function showSpeedHighlights(chart) {
+    chart.select(".speedunderlay").selectAll("rect")
+    .attr("opacity", 0.1);
+  }
+
+  function clearSpeedHighlights(chart) {
+      chart.select(".speedunderlay").selectAll("rect")
+        .attr("opacity", 0);
+  }
+
+  var speechData;
+  // create 1-D scatterplot for speech data [3]
+  d3.tsv("data/P3D3_speech.tsv", typeSpeech, function(error, data){
+    if (error) return console.warn(error);
+
+    speechData = data;
+
+    //x.domain(d3.extent(data, function(d) { return d.time; }));
+    y.domain([0,1]);
+    speechsvg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + speechheight + ")")
+        .call(xAxis)
+        .selectAll("text")
+          .style("text-anchor", "end")
+          .attr("dx", "-.8em")
+          .attr("dy", ".15em")
+          .attr("transform", "rotate(-65)" );
+
+    // add a highlight layer under the data
+    speechsvg.append("g")
+        .attr("class", "speedunderlay");
+
+    // add a speech highlight layer under the data
+    speechsvg.append("g")
+        .attr("class", "speechunderlay");
+
+    //draw the playhead and make sure it is behind the circles
+    speechsvg.append("line")
+      .attr("class", "playhead")
+      .attr("x1", x(startTime))  //<<== change your code here
+      .attr("y1", 10)
+      .attr("x2", x(startTime))  //<<== and here
+      .attr("y2", height - margin.top - margin.bottom - speechheight - 10)
+
+    // draw the speed higlights to match the data
+    drawSpeedHighlights(speechsvg);
+
+    // filter the speech data
+    filterSpeech(12);
+    drawSpeechHighlights(speechsvg);
+    drawSpeechHighlights(svg);
+
+    speechsvg.selectAll(".dot")
+        .data(data)
+      .enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", radius)
+        .attr("cx", function(d) { return x(d.time); })
+        .attr("cy", speechheight/2)
+        .on("click", function(d) {
+          jumpToVideoTime(d);
+
+          // print the questiosn on the screen
+          span = document.getElementById("question");
+          txt = document.createTextNode(d.speech);
+          span.innerText = txt.textContent;
+        })
+        .on("mouseover", function(d) {
+          d3.select(this).attr("r", radius*3)
+          .style("opacity", 0.5);
+
+          div.transition()
+              .duration(200)
+              .style("opacity", .9);
+          div	.html(d.speech)
+              .style("left", (d3.event.pageX) + "px")
+              .style("top", (d3.event.pageY - 38) + "px");
+        })
+        .on("mouseout", function () {
+          d3.select(this).attr("r", radius)
+          .style("opacity", 0.2);
+
+          div.transition()
+            .duration(500)
+            .style("opacity", 0);
+        });
+
+  });
+
+  function jumpToVideoTime(d) {
+    videoTime = (d.time - startTime)/1000;
+    //console.log(videoTime);
+    player.seekTo(videoTime); //go to the time in the video
+    player.setPlaybackRate(1);
+  }
+
+  // filter the speech based on the density of points and highlight
+  // the different areas of the charts
+  var speechFilterTimes = [];
+  // thres in seconds
+  function filterSpeech(thres) {
+    speechFilterTimes = [];
+    timeBlock = [];
+    for (var i = 0; i < speechData.length-1; i++) {
+      timeDiff = (speechData[i+1].time - speechData[i].time)/1000;
+      if (timeDiff <= thres) {
+        timeBlock.push(speechData[i].time);
+        timeBlock.push(speechData[i+1].time);
+        speechFilterTimes.push(timeBlock);
+        timeBlock = [];
+      }
+    }
+  }
+
+  // draw speech highlighting
+  function drawSpeechHighlights(chart) {
+    // fast updating of the highlights
+    var speechHighlights = chart.select(".speechunderlay").selectAll("rect")
+      .data(speechFilterTimes);
+
+    speechHighlights.enter().append("rect")
+      .attr("class", "speechHighlights")
+      .attr("x", function (d, i){
+        return x(speechFilterTimes[i][0]);
+      })
+      .attr("width", function (d, i) {
+        highlightwidth = x(speechFilterTimes[i][1]) - x(speechFilterTimes[i][0]);
+        return highlightwidth;
+      })
+      .attr("height", height)
+      .attr("fill", "red")
+      .attr("opacity", function() {
+        if ($("#speechCheck").prop('checked')) {
+          return 0.1;
+        }
+        else {
+          return 0;
+        }
+      });
+
+    speechHighlights.attr("x", function (d, i){
       return x(speechFilterTimes[i][0]);
-    })
+      })
     .attr("width", function (d, i) {
       highlightwidth = x(speechFilterTimes[i][1]) - x(speechFilterTimes[i][0]);
       return highlightwidth;
-    })
-    .attr("height", height)
-    .attr("fill", "red")
-    .attr("opacity", function() {
-      if ($("#speechCheck").prop('checked')) {
-        return 0.1;
-      }
-      else {
-        return 0;
-      }
     });
 
-  speechHighlights.attr("x", function (d, i){
-    return x(speechFilterTimes[i][0]);
-    })
-  .attr("width", function (d, i) {
-    highlightwidth = x(speechFilterTimes[i][1]) - x(speechFilterTimes[i][0]);
-    return highlightwidth;
-  });
-
-  speechHighlights.exit().remove();
-}
-
-function showSpeechHighlights(chart) {
-  chart.select(".speechunderlay").selectAll("rect")
-  .attr("opacity", 0.1);
-}
-
-function clearSpeechHighlights(chart) {
-    chart.select(".speechunderlay").selectAll("rect")
-      .attr("opacity", 0);
-}
-
-function markSpeechDot(videoTime) {
-  speechsvg.selectAll("circle")
-    .attr("opacity", 1);
-    // .attr("opacity", function(d) {
-    //   playheadTime = d3.time.second.offset(startTime, videoTime);
-    //   if (playheadTime >= d.time) {
-    //     return 1;
-    //   }
-    //   else {
-    //     //console.log("not");
-    //     return 1;
-    //   }
-    // })
-}
-
-function typeSpeech(d) {
-  d.time = formatTime.parse(d.time);
-  d.speech = d.speech;
-  return d;
-}
-
-function updatePlayhead(videoTime) {
-  //console.log(videoTime);
-  playheadTime = d3.time.second.offset(startTime, videoTime);
-  speechsvg.select(".playhead")
-    .attr("class", "playhead")
-    .attr("x1", x(playheadTime))  //<<== change your code here
-    .attr("x2", x(playheadTime))  //<<== and here
-
-  svg.select(".playhead")
-    .attr("class", "playhead")
-    .attr("x1", x(playheadTime))  //<<== change your code here
-    .attr("x2", x(playheadTime))  //<<== and here
+    speechHighlights.exit().remove();
   }
 
+  function showSpeechHighlights(chart) {
+    chart.select(".speechunderlay").selectAll("rect")
+    .attr("opacity", 0.1);
+  }
 
+  function clearSpeechHighlights(chart) {
+      chart.select(".speechunderlay").selectAll("rect")
+        .attr("opacity", 0);
+  }
+
+  function markSpeechDot(videoTime) {
+    speechsvg.selectAll("circle")
+      .attr("opacity", 1);
+      // .attr("opacity", function(d) {
+      //   playheadTime = d3.time.second.offset(startTime, videoTime);
+      //   if (playheadTime >= d.time) {
+      //     return 1;
+      //   }
+      //   else {
+      //     //console.log("not");
+      //     return 1;
+      //   }
+      // })
+  }
+
+  function typeSpeech(d) {
+    d.time = formatTime.parse(d.time);
+    d.speech = d.speech;
+    return d;
+  }
+
+  function updatePlayhead(videoTime) {
+    //console.log(videoTime);
+    playheadTime = d3.time.second.offset(startTime, videoTime);
+    speechsvg.select(".playhead")
+      .attr("class", "playhead")
+      .attr("x1", x(playheadTime))  //<<== change your code here
+      .attr("x2", x(playheadTime))  //<<== and here
+
+    svg.select(".playhead")
+      .attr("class", "playhead")
+      .attr("x1", x(playheadTime))  //<<== change your code here
+      .attr("x2", x(playheadTime))  //<<== and here
+    }
+
+}
 // References
 // [1] Loading JSON data: https://github.com/d3/d3/wiki/Requests
 // [2] Line graph: https://bl.ocks.org/mbostock/3883245
